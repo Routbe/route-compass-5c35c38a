@@ -8,8 +8,8 @@ import { copyDe } from "./copy.de";
 const ALL = { nl: copyNl, en: copyEn, fr: copyFr, de: copyDe };
 
 describe("discover topics", () => {
-  it("has exactly the nine product lines", () => {
-    expect(TOPIC_SLUGS).toHaveLength(9);
+  it("has exactly the ten product lines", () => {
+    expect(TOPIC_SLUGS).toHaveLength(10);
     expect(isTopicSlug("rout-card")).toBe(true);
     expect(isTopicSlug("studio")).toBe(false);
   });
@@ -33,6 +33,20 @@ describe("discover topics", () => {
   it("maps the wallet info page to the ROUT card product", () => {
     expect(topicForPath("/info/wallet")).toBe("rout-card");
     expect(CHAPTER_TOPIC.wallet).toBe("rout-card");
+  });
+
+  it("gives bookings its own product page, reached from the bookings info page", () => {
+    expect(isTopicSlug("bookings")).toBe(true);
+    expect(TOPICS.bookings.primary).toBe("/info/bookings");
+    expect(topicForPath("/info/bookings")).toBe("bookings");
+    // Pages that are only listed (not owned) keep their first listing.
+    expect(topicForPath("/info/guestbook")).toBe("profiles");
+  });
+
+  it.each(Object.entries(ALL))("%s bookings copy promises the 5-minute hold and never a Google or Outlook link", (_, copy) => {
+    const text = JSON.stringify(copy.topics.bookings);
+    expect(text).toMatch(/5 min/);
+    expect(text).not.toMatch(/google|outlook|microsoft/i);
   });
 
   it("says the private card code expires after a minute and needs two-step verification first", () => {
