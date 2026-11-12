@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isLiveActive, isSpotifyVisible } from "@/lib/live-presence-rules";
+import { isLiveActive, isLiveDataFresh, isSpotifyVisible } from "@/lib/live-presence-rules";
 
 const now = Date.parse("2026-10-15T12:00:00Z");
 describe("live presence windows", () => {
@@ -44,5 +44,22 @@ describe("Fediverse 3-hour window", () => {
   it.each(["mastodon", "bluesky", "wsocial"])("%s hides when the newest post is 4 hours old", (p) => {
     expect(isLiveActive(p, "2026-10-15T08:00:00Z", now)).toBe(false);
     expect(isLiveActive(p, null, now)).toBe(false);
+  });
+});
+
+describe("stale live data is hidden", () => {
+  const MIN = 60_000;
+  it("music disappears 10 minutes after the last successful update", () => {
+    expect(isLiveDataFresh("spotify", now - 10 * MIN, now)).toBe(true);
+    expect(isLiveDataFresh("spotify", now - 10 * MIN - 1, now)).toBe(false);
+    expect(isLiveDataFresh("lastfm", now - 11 * MIN, now)).toBe(false);
+  });
+  it("a Steam game disappears after 15 minutes without a fresh answer", () => {
+    expect(isLiveDataFresh("steam", now - 14 * MIN, now)).toBe(true);
+    expect(isLiveDataFresh("steam", now - 16 * MIN, now)).toBe(false);
+  });
+  it("never shows a live widget that has no successful update yet", () => {
+    expect(isLiveDataFresh("steam", 0, now)).toBe(false);
+    expect(isLiveDataFresh("lastfm", undefined, now)).toBe(false);
   });
 });
