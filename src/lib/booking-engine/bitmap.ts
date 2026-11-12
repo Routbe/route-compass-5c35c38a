@@ -92,24 +92,30 @@ function timeline(days: { day: string; bits: DayBits }[]): { start: Date; bits: 
 /**
  * Bookable start instants from cached bits. A start is bookable when every slot
  * of [start − bufferBefore, start + duration + bufferAfter) is free, it respects
- * minimum notice and the max horizon, and it sits on the step grid.
+ * minimum notice and the horizon, and it sits on the step grid. Slot indices
+ * match db/0216-0218: floor(block start) .. ceil(block end) on the 15-minute grid.
+ * `adjacentOnly`: the block must touch something taken (or the edge of working
+ * hours) right before or right after it, so the day never gets gaps.
  */
 export function bookableStarts(days: { day: string; bits: DayBits }[], rules: EventTypeRules, now: Date): Date[] {
   if (days.length === 0) return [];
   const { start, bits } = timeline(days);
   const before = Math.ceil(rules.bufferBeforeMinutes / SLOT_MINUTES);
-  const len = Math.ceil(rules.durationMinutes / SLOT_MINUTES);
-  const after = Math.ceil(rules.bufferAfterMinutes / SLOT_MINUTES);
+  const tail = Math.ceil((rules.durationMinutes + rules.bufferAfterMinutes) / SLOT_MINUTES);
   const step = rules.slotStepMinutes / SLOT_MINUTES;
   const earliest = now.getTime() + rules.minimumNoticeHours * 3600000;
+  const horizon = rules.horizonEndUtc ? rules.horizonEndUtc.getTime() : null;
   const latest = now.getTime() + rules.maxDaysAhead * 86400000;
   const out: Date[] = [];
   for (let i = 0; i < bits.length; i += step) {
     const at = start.getTime() + i * SLOT_MINUTES * 60000;
-    if (at < earliest || at > latest) continue;
-    const a = i - before, b = i + len + after;
+    if (at < earliest) continue;
+    if (horizon != null ? at >= horizon : at > latest) continue;
+    const a = i - before, b = i + tail;
     if (a < 0 || b > bits.length) continue;
-    if (!bits.slice(a, b).includes("0")) out.push(new Date(at));
+    if (bits.slice(a, b).includes("0")) continue;
+    if (rules.adjacentOnly && !(a === 0 || bits[a - 1] === "0" || b === bits.length || bits[b] === "0")) continue;
+    out.push(new Date(at));
   }
   return out;
 }
