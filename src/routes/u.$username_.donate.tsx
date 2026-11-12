@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import Donate from "@/components/imported-pages/TipPage";
 import { canonicalLinks, donateJsonLd } from "@/lib/social-meta";
 import { sanitizeHandleInput } from "@/lib/validations/sanitizeHandle";
+import { shareCardMeta } from "@/lib/og-action-card";
 
 export const Route = createFileRoute("/u/$username_/donate")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -22,7 +23,7 @@ export const Route = createFileRoute("/u/$username_/donate")({
         { property: "og:title", content: title },
         { property: "og:description", content: description },
         { property: "og:type", content: "profile" },
-        { name: "twitter:card", content: "summary" },
+        ...shareCardMeta(handle, "donate", "nl", "alias"),
       ],
     };
   },
