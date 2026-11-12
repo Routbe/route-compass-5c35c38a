@@ -402,3 +402,19 @@
 .zt-button:focus-visible { outline: 2px solid var(--zt-mint); outline-offset: 2px; }
 .zt-link { color: var(--zt-muted); text-decoration: underline; text-underline-offset: 3px; }
 .zt-link:hover { color: var(--zt-ink); }
+
+/* Glass material refinement: razor 1px edges, a 16px blur and no diffused glow around controls. */
+@scope (:root[data-workspace-ui="internal"][data-theme="glass"]) to ([data-profile-theme], [data-interface-artwork], .preview-sheet, .wallet-vault) {
+  :is(.spatial-button, .spatial-input, .acrylic-card, .spatial-glass) {
+    --glass-edge: rgba(0, 0, 0, 0.08);
+    border-color: var(--glass-edge) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    backdrop-filter: blur(16px) !important;
+  }
+  :is(.spatial-button) { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1) !important; filter: none !important; }
+  :is(.spatial-button):hover { filter: brightness(1.06) !important; }
+  :is(.spatial-input) { box-shadow: none !important; }
+}
+@scope (:root.dark[data-workspace-ui="internal"][data-theme="glass"]) to ([data-profile-theme], [data-interface-artwork], .preview-sheet, .wallet-vault) {
+  :is(.spatial-button, .spatial-input, .acrylic-card, .spatial-glass) { --glass-edge: rgba(255, 255, 255, 0.08); }
+}
