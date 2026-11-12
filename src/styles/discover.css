@@ -359,7 +359,7 @@
 }
 @media (max-width: 639px) {
   .chapter-deck { padding-block: 36px 8px; border-block: 1px solid var(--color-border); }
-  .chapter-deck-tabs { display: flex; gap: 8px; overflow-x: auto; padding: 0 20px 14px; scrollbar-width: none; position: sticky; top: 64px; z-index: 5; background: linear-gradient(var(--color-background) 80%, transparent); }
+  .chapter-deck-tabs { display: flex; gap: 8px; overflow-x: auto; padding: 0 20px 14px; scrollbar-width: none; }
   .chapter-deck-tabs::-webkit-scrollbar { display: none; }
   .chapter-deck-tabs button { flex: 0 0 auto; padding: 8px 14px; border-radius: 999px; font: 500 12px/1 var(--font-mono); letter-spacing: .02em; color: var(--color-muted-foreground); border: 1px solid var(--color-border); background: var(--color-card); transition: color .2s, border-color .2s, background .2s; }
   .chapter-deck-tabs button[aria-current="true"] { color: oklch(0.15 0.02 160); background: var(--tp); border-color: color-mix(in oklab, var(--tp) 70%, white); }
