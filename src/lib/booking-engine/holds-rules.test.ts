@@ -66,6 +66,21 @@ describe("other visitors' holds and full periods", () => {
     expect(hhmm(left)[0]).toBe("10:00");
   });
 
+  it("a group session with seats left keeps only its own start, overlapping starts go", () => {
+    const session = { kind: "session" as const, startUtc: new Date("2026-02-02T09:00:00Z"), endUtc: new Date("2026-02-02T09:30:00Z"),
+      openStart: new Date("2026-02-02T09:00:00Z") };
+    const left = hhmm(applyHostConstraints(starts, [session], rules));
+    expect(left).toContain("09:00");
+    expect(left).not.toContain("08:45");
+    expect(left).not.toContain("09:15");
+    expect(left).toContain("09:30");
+  });
+
+  it("a full group session removes its own start too", () => {
+    const full = { kind: "session" as const, startUtc: new Date("2026-02-02T09:00:00Z"), endUtc: new Date("2026-02-02T09:30:00Z"), openStart: null };
+    expect(hhmm(applyHostConstraints(starts, [full], rules))).not.toContain("09:00");
+  });
+
   it("round robin still offers a start when only one host is held", () => {
     const byHost = new Map([[1, day(free(36, 38))], [2, day(free(36, 38))]]);
     const held = new Map([[1, [{ kind: "busy" as const, startUtc: new Date("2026-02-02T09:00:00Z"), endUtc: new Date("2026-02-02T09:30:00Z") }]]]);

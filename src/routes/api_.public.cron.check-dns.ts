@@ -3,15 +3,12 @@ import { createFileRoute } from "@tanstack/react-router";
 /**
  * Geautomatiseerde DNS-propagatiecontrole: promoot elk profiel met status
  * `pending_dns` waarvan `[handle].rout.be` naar cname.vercel-dns.com wijst.
- * Beveiligd met LOVABLE_CRON_SECRET.
+ * Beveiligd met cronGuard (CRON_SECRET of LOVABLE_CRON_SECRET, constant-time).
  */
 async function handle(request: Request) {
-  const secret = process.env["LOVABLE_CRON_SECRET"];
-  if (!secret) return new Response("Not configured", { status: 503 });
-  const provided =
-    request.headers.get("x-cron-secret") ??
-    (request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
-  if (provided !== secret) return new Response("Unauthorized", { status: 401 });
+  const { cronGuard } = await import("@/lib/cron-auth");
+  const denied = await cronGuard(request);
+  if (denied) return denied;
 
   const { runDnsPropagationCheck } = await import("@/lib/subdomain-claims.server");
   const result = await runDnsPropagationCheck();
