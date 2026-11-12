@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useLiveFresh } from "@/hooks/useLiveFresh";
 import { useTranslation } from "react-i18next";
 import { proxied } from "@/lib/image-proxy-rules";
 import { cardEffectClasses, type SteamStatus } from "@/lib/steam-presence";
@@ -17,7 +18,8 @@ export function SteamCard({ handle, theme, effects }: { handle: string; theme: T
     refetchInterval: 120_000,
     staleTime: 60_000,
   });
-  const d = q.data;
+  const fresh = useLiveFresh("steam", q.dataUpdatedAt);
+  const d = fresh ? q.data : undefined;
   if (!d || d.state !== "in-game") return null;
   const live = d.state === "in-game";
   const avatar = proxied(d.avatar);
