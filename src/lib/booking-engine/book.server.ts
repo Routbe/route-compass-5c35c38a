@@ -11,7 +11,7 @@ import type { BookingOutcome, BookingRequest } from "./types";
 import { splitSensitive, validateIntake } from "./intake";
 import { publicEventType } from "./public.server";
 
-const OUTCOMES = new Set(["slot_taken", "outside_availability", "too_soon", "too_far", "inactive", "invalid_input"]);
+const OUTCOMES = new Set(["slot_taken", "outside_availability", "too_soon", "too_far", "inactive", "invalid_input", "guest_limit"]);
 
 export function isSlotTakenError(err: unknown): boolean {
   const e = err as { code?: string; message?: string; body?: string };
@@ -46,8 +46,14 @@ export async function bookSlot(req: BookingRequest): Promise<BookingOutcome> {
 
   let r: CreateResult;
   try {
-    const rows = (await sql`select public.rout_booking_create(${et.id}::uuid, ${req.startUtc}::timestamptz,
-        ${req.guestName}, ${req.guestEmail}, ${req.guestTimezone}, ${req.guestNote}, ${intake ? JSON.stringify(intake) : null}::jsonb) as r`) as { r: CreateResult }[];
+    const intakeJson = intake ? JSON.stringify(intake) : null;
+    // The 9-argument form (db/0218) consumes the visitor's soft-lock; a hold only exists once 0218 is live.
+    const rows = (req.holdId && req.holdSecret && et.holdMinutes != null
+      ? await sql`select public.rout_booking_create(${et.id}::uuid, ${req.startUtc}::timestamptz,
+          ${req.guestName}, ${req.guestEmail}, ${req.guestTimezone}, ${req.guestNote}, ${intakeJson}::jsonb,
+          ${req.holdId}::uuid, ${req.holdSecret}) as r`
+      : await sql`select public.rout_booking_create(${et.id}::uuid, ${req.startUtc}::timestamptz,
+          ${req.guestName}, ${req.guestEmail}, ${req.guestTimezone}, ${req.guestNote}, ${intakeJson}::jsonb) as r`) as { r: CreateResult }[];
     r = rows[0]!.r;
   } catch (err) {
     if (isSlotTakenError(err)) return { ok: false, reason: "slot_taken" };
@@ -128,4 +134,34 @@ export async function releaseBookingHold(bookingId: string): Promise<string> {
 export async function releaseExpiredHolds(): Promise<number> {
   const rows = (await sql`select public.rout_booking_release_expired(500) as n`) as { n: number }[];
   return Number(rows[0]?.n ?? 0);
+}
+
+export type HoldOutcome =
+  | { ok: true; holdId: string; secret: string; expiresAt: string; startUtc: string }
+  | { ok: false; reason: "slot_taken" | "outside_availability" | "too_soon" | "too_far" | "inactive" | "too_many_holds" | "unavailable" };
+
+const HOLD_REASONS = new Set(["slot_taken", "outside_availability", "too_soon", "too_far", "inactive", "too_many_holds"]);
+
+/**
+ * Soft-lock a start for 5 minutes (db/0218). `clientKey` is a digest of the
+ * visitor's network identity so one visitor cannot hold more than 3 slots.
+ * Before 0218 is live this reports `unavailable` and the page books without a hold.
+ */
+export async function holdSlot(eventTypeId: string, startUtc: string, clientKey: string, replace: { id: string; secret: string } | null): Promise<HoldOutcome> {
+  const et = await publicEventType(eventTypeId);
+  if (!et || et.hostCount === 0) return { ok: false, reason: "inactive" };
+  if (et.holdMinutes == null) return { ok: false, reason: "unavailable" };
+  const rows = (await sql`select public.rout_booking_hold(${eventTypeId}::uuid, ${startUtc}::timestamptz, ${clientKey},
+      ${replace?.id ?? null}::uuid, ${replace?.secret ?? null}) as r`) as { r: { ok: boolean; reason?: string; holdId?: string; secret?: string; expiresAt?: string; startUtc?: string } }[];
+  const r = rows[0]?.r;
+  if (r?.ok && r.holdId && r.secret && r.expiresAt) {
+    return { ok: true, holdId: r.holdId, secret: r.secret, expiresAt: new Date(r.expiresAt).toISOString(), startUtc: new Date(r.startUtc ?? startUtc).toISOString() };
+  }
+  const reason = r?.reason && HOLD_REASONS.has(r.reason) ? r.reason : "slot_taken";
+  return { ok: false, reason: reason as Exclude<HoldOutcome, { ok: true }>["reason"] };
+}
+
+export async function releaseSlotHold(holdId: string, secret: string): Promise<boolean> {
+  const rows = (await sql`select public.rout_booking_hold_release(${holdId}::uuid, ${secret}) as ok`) as { ok: boolean | null }[];
+  return Boolean(rows[0]?.ok);
 }
