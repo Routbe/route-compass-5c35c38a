@@ -95,7 +95,7 @@
 - [x] Badges: geen flikkering bij laden
 - [x] Privacy-schild: geen wettelijke naam of handelsnaam in openbaar profiel
 - [x] Live-blokken Steam/Last.fm/muziek: verdwijnen als gegevens verouderd zijn
-- [x] ROUT-kaart: privégegevens bekijken max 2 minuten per bevestiging (nu 5)
+- [x] ROUT-kaart: privégegevens bekijken max 2 minuten per bevestiging (was 5)
 - [x] Docs-pagina's: "Zo werkt het", "Veelgestelde vragen", "Verder met ROUT" vertalen
 - [ ] Boekingen fase 2 (soft-lock 5 min + aftelklok, limieten per gast): wacht op akkoord voor databasewijziging op live Neon
 - [ ] Herstelkluis v2 (Argon2id, wachttijd, Merkle): wacht op 4 keuzes van eigenaar (docs/security/recovery-vault-design.md §7)
