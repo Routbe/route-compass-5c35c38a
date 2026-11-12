@@ -433,8 +433,8 @@ describe("db/0220: external calendar busy times belong to their owner only", () 
     expect(await asUser(null, async () => (await db.query("select 1 from public.calendar_events")).rows.length)).toBe(0);
   });
 
-  it("the booking check still sees every host's busy times", async () => {
-    expect((await hold(SOLO, at("10:15"), OTHER))["reason"]).toBe("slot_taken");
-    expect((await hold(SOLO, at("12:00"), OTHER))["ok"]).toBe(true);
+  it("the booking check, called by a guest without session, still sees every host's busy times", async () => {
+    expect((await asUser(null, () => hold(SOLO, at("10:15"), OTHER)))["reason"]).toBe("slot_taken");
+    expect((await asUser(null, () => hold(SOLO, at("12:00"), OTHER)))["ok"]).toBe(true);
   });
 });
