@@ -69,7 +69,7 @@ export const TOPICS: Record<TopicSlug, TopicMeta> = {
   questions: { primary: "/info/anonymous-questions", docs: ["/info/anonymous-questions", "/info/answers-and-stories", "/about/anonymous-questions", "/info/parental-consent"] },
   workspaces: { primary: "/solutions/agencies", docs: ["/solutions/agencies", "/product/custom-domains", "/features/asset-manager", "/features/design-studio"] },
   developers: { primary: "/developers", docs: ["/developers", "/developer/identity-oauth", "/developer/ai-mcp", "/developer/webhooks", "/developer/credentials", "/about/open-source"] },
-  bookings: { primary: "/info/bookings", docs: ["/info/bookings", "/info/payment-pages", "/info/profiles", "/developer/ai-mcp"] },
+  bookings: { primary: "/info/bookings", docs: ["/info/bookings", "/info/payment-pages", "/info/profiles"] },
 };
 
 export type TopicCopy = {

@@ -253,5 +253,32 @@ export const copyFr: DiscoverCopy = {
       final: { title: "Tes utilisateurs méritent une meilleure connexion.", text: "Enregistre ta première appli dans le portail développeurs." },
       docs: ["Portail développeurs", "Identité et OAuth", "IA et MCP", "Webhooks", "Attestations", "Open source"],
     },
+    bookings: {
+      brand: "ROUT Rendez-vous",
+      title: "Laissez les gens réserver un moment avec vous.",
+      lead: "Votre propre page de réservation sur votre profil. Vous décidez quand vous êtes disponible, votre agenda reste privé et la personne qui réserve garde le créneau choisi pendant qu'elle remplit ses coordonnées.",
+      primary: "Comment fonctionnent les rendez-vous",
+      chips: ["Réservé 5 minutes", "Votre fuseau horaire", "Invitation (.ics)", "Session de groupe"],
+      works: ["iCalendar (.ics)", "CalDAV", "Liens d'agenda (ICS)", "Votre profil", "Workspaces"],
+      features: [
+        { title: "Jamais de double réservation", text: "Chaque réservation est vérifiée au moment même. Un créneau choisi reste réservé au visiteur pendant 5 minutes." },
+        { title: "Votre agenda reste privé", text: "Des agendas connectés, ROUT ne garde que vos moments occupés, jamais les titres, lieux ou participants." },
+        { title: "Vos règles", text: "Heures de travail, pauses entre les rendez-vous, délai minimum et un maximum par jour, semaine ou mois." },
+        { title: "Pour les équipes et les groupes", text: "Des sessions de groupe avec un nombre de places fixe, ou un rendez-vous avec un ou tous les membres d'un workspace." },
+      ],
+      steps: [
+        { title: "Créez un type de rendez-vous", text: "Choisissez la durée, le lieu et si vous confirmez d'abord." },
+        { title: "Indiquez vos disponibilités", text: "Vos heures de travail, vos exceptions et éventuellement votre propre agenda." },
+        { title: "Partagez votre lien", text: "Les visiteurs choisissent un jour et une heure dans leur propre fuseau horaire et reçoivent une invitation." },
+      ],
+      faq: [
+        { q: "Les visiteurs ont-ils besoin d'un compte ?", a: "Non. Ils choisissent un moment, indiquent leur nom et leur adresse e-mail et reçoivent une invitation pour leur agenda." },
+        { q: "Et si deux personnes choisissent la même heure en même temps ?", a: "La première garde ce créneau pendant 5 minutes. L'autre ne le voit plus ou reçoit aussitôt une autre proposition." },
+        { q: "ROUT voit-il le contenu de mon agenda ?", a: "Non. Seuls le début et la fin des moments occupés servent à calculer votre temps libre." },
+        { q: "Puis-je d'abord approuver les demandes ?", a: "Oui. Réglez la confirmation sur « demande » et vous acceptez ou refusez vous-même chaque réservation." },
+      ],
+      final: { title: "Moins d'e-mails dans tous les sens.", text: "Créez votre premier type de rendez-vous dans votre agenda." },
+      docs: ["Rendez-vous", "Pages de paiement", "Profils"],
+    },
   },
 };
