@@ -989,5 +989,7 @@
   "booking.public.timezoneDetecting": "Zeitzone wird ermittelt…",
   "booking.public.period.morning": "Vormittag",
   "booking.public.period.afternoon": "Nachmittag",
-  "booking.public.period.evening": "Abend"
+  "booking.public.period.evening": "Abend",
+  "booking.public.tzSuggested": "Vorgeschlagen",
+  "booking.public.tzAll": "Alle Zeitzonen"
 }

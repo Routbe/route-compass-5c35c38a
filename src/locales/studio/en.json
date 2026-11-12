@@ -989,5 +989,7 @@
   "booking.public.timezoneDetecting": "Detecting time zone…",
   "booking.public.period.morning": "Morning",
   "booking.public.period.afternoon": "Afternoon",
-  "booking.public.period.evening": "Evening"
+  "booking.public.period.evening": "Evening",
+  "booking.public.tzSuggested": "Suggested",
+  "booking.public.tzAll": "All time zones"
 }

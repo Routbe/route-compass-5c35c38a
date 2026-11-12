@@ -989,5 +989,7 @@
   "booking.public.timezoneDetecting": "Tijdzone bepalen…",
   "booking.public.period.morning": "Ochtend",
   "booking.public.period.afternoon": "Middag",
-  "booking.public.period.evening": "Avond"
+  "booking.public.period.evening": "Avond",
+  "booking.public.tzSuggested": "Voorgesteld",
+  "booking.public.tzAll": "Alle tijdzones"
 }

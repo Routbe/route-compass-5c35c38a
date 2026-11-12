@@ -989,5 +989,7 @@
   "booking.public.timezoneDetecting": "Détection du fuseau horaire…",
   "booking.public.period.morning": "Matin",
   "booking.public.period.afternoon": "Après-midi",
-  "booking.public.period.evening": "Soir"
+  "booking.public.period.evening": "Soir",
+  "booking.public.tzSuggested": "Suggérés",
+  "booking.public.tzAll": "Tous les fuseaux horaires"
 }
