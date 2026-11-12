@@ -14,9 +14,16 @@ export type HostDay = { day: string; bits: DayBits };
  * `busy` = another visitor's live hold (block range), `limit` = a calendar period
  * in which the host reached a limit of this type. Both are per host ordinal.
  */
-export type HostConstraint = { kind: "busy" | "limit"; startUtc: Date; endUtc: Date };
+/**
+ * busy = another visitor's hold (block overlap); limit = a full day/week/month (start inside);
+ * session = a group session (db/0219): overlapping starts are refused, except its own start
+ * while seats remain (`openStart`), exactly like rout_booking_host_free_held.
+ */
+export type HostConstraint =
+  | { kind: "busy" | "limit"; startUtc: Date; endUtc: Date }
+  | { kind: "session"; startUtc: Date; endUtc: Date; openStart: Date | null };
 
-/** Drop the starts a host cannot take because of holds (block overlap) or full periods (start inside). */
+/** Drop the starts a host cannot take because of holds, group sessions (block overlap) or full periods (start inside). */
 export function applyHostConstraints(starts: Date[], constraints: HostConstraint[], rules: EventTypeRules): Date[] {
   if (!constraints.length) return starts;
   const before = rules.bufferBeforeMinutes * 60000;
@@ -25,7 +32,9 @@ export function applyHostConstraints(starts: Date[], constraints: HostConstraint
     const t = s.getTime();
     return !constraints.some((c) => {
       const a = c.startUtc.getTime(), b = c.endUtc.getTime();
-      return c.kind === "limit" ? t >= a && t < b : t - before < b && t + after > a;
+      if (c.kind === "limit") return t >= a && t < b;
+      if (c.kind === "session" && c.openStart && c.openStart.getTime() === t) return false;
+      return t - before < b && t + after > a;
     });
   });
 }

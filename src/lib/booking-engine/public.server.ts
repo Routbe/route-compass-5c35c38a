@@ -62,7 +62,12 @@ export async function publicSlots(id: string, now = new Date(), holdId: string |
     if (!byHost.has(k)) byHost.set(k, []);
     byHost.get(k)!.push({ day: r.day, bits: r.bits });
   }
-  const constraints = et.holdMinutes != null ? await publicConstraints(id, now, et.rules.maxDaysAhead, holdId) : new Map();
+  const constraints = et.holdMinutes != null ? await publicConstraints(id, now, et.rules.maxDaysAhead, holdId) : new Map<number, HostConstraint[]>();
+  if (et.holdMinutes != null && (await hasSessions())) {
+    for (const [k, list] of await publicSessions(id, now, et.rules.maxDaysAhead, holdId)) {
+      constraints.set(k, [...(constraints.get(k) ?? []), ...list]);
+    }
+  }
   return mergeHostStarts(byHost, et.hostCount, et.rules.routingStrategy === "COLLECTIVE", et.rules, now, constraints).map((d) => d.toISOString());
 }
 
@@ -77,6 +82,31 @@ async function publicConstraints(id: string, now: Date, maxDaysAhead: number, ho
     const k = Number(r.host_ordinal);
     if (!out.has(k)) out.set(k, []);
     out.get(k)!.push({ kind: r.kind, startUtc: new Date(r.start_utc), endUtc: new Date(r.end_utc) });
+  }
+  return out;
+}
+
+/** db/0219 is applied (cached 60 s), so the slot list never calls a function that does not exist yet. */
+let sessionsProbe: { ok: boolean; at: number } | null = null;
+async function hasSessions(): Promise<boolean> {
+  if (sessionsProbe && Date.now() - sessionsProbe.at < 60_000) return sessionsProbe.ok;
+  const rows = (await sql`select to_regprocedure('public.rout_booking_public_sessions(uuid, timestamptz, timestamptz, uuid)') is not null as ok`) as { ok: boolean }[];
+  sessionsProbe = { ok: Boolean(rows[0]?.ok), at: Date.now() };
+  return sessionsProbe.ok;
+}
+
+/** Group sessions of every host (db/0219): blocks to avoid, and whether the exact start still has a seat. */
+async function publicSessions(id: string, now: Date, maxDaysAhead: number, holdId: string | null) {
+  const to = new Date(now.getTime() + (maxDaysAhead + 1) * 86400000).toISOString();
+  const rows = (await sql`select host_ordinal, start_utc, block_start_utc, block_end_utc, open
+    from public.rout_booking_public_sessions(${id}::uuid, ${now.toISOString()}::timestamptz, ${to}::timestamptz, ${holdId}::uuid)`) as
+    { host_ordinal: number; start_utc: string; block_start_utc: string; block_end_utc: string; open: boolean }[];
+  const out = new Map<number, HostConstraint[]>();
+  for (const r of rows) {
+    const k = Number(r.host_ordinal);
+    if (!out.has(k)) out.set(k, []);
+    out.get(k)!.push({ kind: "session", startUtc: new Date(r.block_start_utc), endUtc: new Date(r.block_end_utc),
+      openStart: r.open ? new Date(r.start_utc) : null });
   }
   return out;
 }
