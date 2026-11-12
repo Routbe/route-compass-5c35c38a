@@ -373,3 +373,10 @@
   .chapter-deck-nav button:active { transform: translateY(1.5px); box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 .5px 0 oklch(0 0 0 / .55); }
 }
 @media (max-width: 639px) and (prefers-reduced-motion: reduce) { .chapter-deck-rail { scroll-behavior: auto; transition: none; } }
+/* Phones: the "more", use-case and agent-step grids become one swipe row instead of a long stack. */
+@media (max-width: 639px) {
+  .gateway-editorial :is(.story-more-grid, #ai-agents ol) { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; margin-inline: -20px; padding: 4px 20px 14px; scrollbar-width: none; }
+  .gateway-editorial :is(.story-more-grid, #ai-agents ol)::-webkit-scrollbar { display: none; }
+  .gateway-editorial :is(.story-more-grid, #ai-agents ol) > * { flex: 0 0 80%; scroll-snap-align: start; padding: 20px; border: 1px solid var(--color-border); border-radius: 14px; background: color-mix(in oklab, var(--color-primary) 4%, var(--color-card)); }
+  .gateway-editorial .story-more-grid { margin-top: 32px; }
+}
