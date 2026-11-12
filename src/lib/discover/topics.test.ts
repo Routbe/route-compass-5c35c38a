@@ -45,7 +45,7 @@ describe("discover topics", () => {
 
   it.each(Object.entries(ALL))("%s bookings copy promises the 5-minute hold and never a Google or Outlook link", (_, copy) => {
     const text = JSON.stringify(copy.topics.bookings);
-    expect(text).toMatch(/5 min/);
+    expect(text).toMatch(/5 min/i);
     expect(text).not.toMatch(/google|outlook|microsoft/i);
   });
 
