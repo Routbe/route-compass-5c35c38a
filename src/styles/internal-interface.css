@@ -30,17 +30,20 @@
   --m-selected: hsl(var(--foreground));
   --m-selected-ink: hsl(var(--background));
   /* Keycaps: a solid cap on a hard wall. No sheen, no gradient, no blurred shadow. */
-  --m-key-travel: 3px;
+  --m-key-travel: 1.5px;
+  --m-key-depth: 2px;
   --m-key-wall: color-mix(in oklab, hsl(var(--primary)) 55%, oklch(0.1 0 0));
-  --m-key-top: none;
-  --m-key-shadow: 0 var(--m-key-travel) 0 0 var(--m-key-wall);
-  --m-key-shadow-down: 0 0 0 0 var(--m-key-wall);
+  /* Classic key: 1px light inner edge, hard 2px wall without blur, 1.5px press. */
+  --m-key-top: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --m-key-shadow: var(--m-key-top), 0 var(--m-key-depth) 0 0 var(--m-key-wall);
+  --m-key-shadow-down: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 0.5px 0 0 var(--m-key-wall);
   /* Secondary: neutral cap on a quiet wall, lower travel. */
-  --m-cap-travel: 2px;
+  --m-cap-travel: 1.5px;
+  --m-cap-depth: 2px;
   --m-cap-wall: hsl(var(--foreground) / 0.24);
-  --m-cap-top: none;
-  --m-cap-shadow: 0 var(--m-cap-travel) 0 0 var(--m-cap-wall);
-  --m-cap-shadow-down: 0 0 0 0 var(--m-cap-wall);
+  --m-cap-top: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --m-cap-shadow: var(--m-cap-top), 0 var(--m-cap-depth) 0 0 var(--m-cap-wall);
+  --m-cap-shadow-down: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 0.5px 0 0 var(--m-cap-wall);
   /* Keys drawn inside their own box (never clipped by a list or card edge). */
   --m-inset-key: inset 0 -2px 0 0 var(--m-cap-wall);
   --m-inset-key-down: inset 0 0 0 0 var(--m-cap-wall);
@@ -72,11 +75,11 @@
   --m-selected: hsl(var(--foreground));
   --m-selected-ink: hsl(var(--background));
   --m-key-wall: color-mix(in oklab, hsl(var(--primary)) 45%, oklch(0 0 0));
-  --m-key-shadow: 0 var(--m-key-travel) 0 0 var(--m-key-wall);
-  --m-key-shadow-down: 0 0 0 0 var(--m-key-wall);
+  --m-key-shadow: var(--m-key-top), 0 var(--m-key-depth) 0 0 var(--m-key-wall);
+  --m-key-shadow-down: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 0.5px 0 0 var(--m-key-wall);
   --m-cap-wall: hsl(var(--foreground) / 0.3);
-  --m-cap-shadow: 0 var(--m-cap-travel) 0 0 var(--m-cap-wall);
-  --m-cap-shadow-down: 0 0 0 0 var(--m-cap-wall);
+  --m-cap-shadow: var(--m-cap-top), 0 var(--m-cap-depth) 0 0 var(--m-cap-wall);
+  --m-cap-shadow-down: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 0.5px 0 0 var(--m-cap-wall);
   --m-inset-key: inset 0 -2px 0 0 var(--m-cap-wall);
   --m-inset-key-down: inset 0 0 0 0 var(--m-cap-wall);
 }
@@ -146,7 +149,7 @@
   }
   .spatial-button:is([data-spatial-control="default"], [data-spatial-control="destructive"], [data-spatial-control="matcha"]):not([data-spatial-size="icon"]) {
     box-shadow: var(--m-key-shadow) !important;
-    margin-bottom: var(--m-key-travel);
+    margin-bottom: var(--m-key-depth);
   }
   .spatial-button:is([data-spatial-control="default"], [data-spatial-control="destructive"], [data-spatial-control="matcha"]):not([data-spatial-size="icon"]):not(:disabled):not([aria-disabled="true"]):active {
     translate: 0 var(--m-key-travel);
@@ -223,7 +226,7 @@
     background-color: var(--m-surface) !important;
     border-color: var(--m-edge) !important;
     box-shadow: var(--m-cap-shadow) !important;
-    margin-bottom: var(--m-cap-travel);
+    margin-bottom: var(--m-cap-depth);
   }
   .spatial-button:is([data-spatial-control="outline"], [data-spatial-control="soft"], [data-spatial-control="secondary"]):not([data-spatial-size="icon"]):not(:disabled):active {
     translate: 0 var(--m-cap-travel);
