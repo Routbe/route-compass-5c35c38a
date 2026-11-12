@@ -1,14 +1,14 @@
 /* Discover product pages (/discover/*) and the home page topic tiles.
    Each product line gets its own accent (--tp, --tp2) so every page feels like its own brand. */
-[data-topic="profiles"] { --tp: oklch(0.83 0.14 165); --tp2: oklch(0.78 0.11 195); }
-[data-topic="qr-studio"] { --tp: oklch(0.89 0.18 125); --tp2: oklch(0.82 0.15 150); }
-[data-topic="links"] { --tp: oklch(0.83 0.12 215); --tp2: oklch(0.80 0.13 180); }
-[data-topic="rout-id"] { --tp: oklch(0.82 0.10 250); --tp2: oklch(0.86 0.06 210); }
-[data-topic="rout-card"] { --tp: oklch(0.85 0.09 85); --tp2: oklch(0.72 0.06 70); }
-[data-topic="creator-support"] { --tp: oklch(0.79 0.15 42); --tp2: oklch(0.84 0.13 70); }
-[data-topic="questions"] { --tp: oklch(0.75 0.19 5); --tp2: oklch(0.80 0.16 55); }
-[data-topic="workspaces"] { --tp: oklch(0.80 0.13 300); --tp2: oklch(0.80 0.10 255); }
-[data-topic="developers"] { --tp: oklch(0.87 0.18 150); --tp2: oklch(0.80 0.12 175); }
+[data-topic="profiles"] { --tp: oklch(0.83 0.14 165); --tp2: oklch(0.78 0.11 195); --tp-hsl: 157 71% 63%; }
+[data-topic="qr-studio"] { --tp: oklch(0.89 0.18 125); --tp2: oklch(0.82 0.15 150); --tp-hsl: 79 82% 65%; }
+[data-topic="links"] { --tp: oklch(0.83 0.12 215); --tp2: oklch(0.80 0.13 180); --tp-hsl: 191 92% 66%; }
+[data-topic="rout-id"] { --tp: oklch(0.82 0.10 250); --tp2: oklch(0.86 0.06 210); --tp-hsl: 209 100% 79%; }
+[data-topic="rout-card"] { --tp: oklch(0.85 0.09 85); --tp2: oklch(0.72 0.06 70); --tp-hsl: 41 68% 72%; }
+[data-topic="creator-support"] { --tp: oklch(0.79 0.15 42); --tp2: oklch(0.84 0.13 70); --tp-hsl: 18 100% 71%; }
+[data-topic="questions"] { --tp: oklch(0.75 0.19 5); --tp2: oklch(0.80 0.16 55); --tp-hsl: 341 100% 72%; }
+[data-topic="workspaces"] { --tp: oklch(0.80 0.13 300); --tp2: oklch(0.80 0.10 255); --tp-hsl: 263 100% 83%; }
+[data-topic="developers"] { --tp: oklch(0.87 0.18 150); --tp2: oklch(0.80 0.12 175); --tp-hsl: 136 87% 70%; }
 
 .dsc { --dsc-edge: oklch(1 0 0 / 0.1); --dsc-surface: oklch(0.15 0.005 160 / 0.7); --dsc-ink: hsl(var(--foreground)); --dsc-muted: hsl(var(--muted-foreground)); position: relative; overflow-x: clip; }
 .dsc-inner { max-width: 1160px; margin-inline: auto; padding-inline: 24px; }
@@ -332,7 +332,9 @@
 
 /* Chapter colour harmony: no ROUT green leaking into blue/gold/violet chapters. */
 .gateway-editorial .story-chapter[data-topic] .text-primary { color: var(--tp); }
-.gateway-editorial .story-chapter[data-topic] .story-product-stage { --primary: var(--tp); }
+/* Every primary token inside a chapter resolves to that chapter's own accent (HSL triple for
+   hsl(var(--primary)) users, oklch for --color-primary users), so charts never fall back to ROUT green. */
+.gateway-editorial .story-chapter[data-topic] { --primary: var(--tp-hsl); --ring: var(--tp-hsl); --color-primary: var(--tp); }
 
 /* Classic keyboard-key press on the home page buttons. */
 .gateway-editorial :is(.infra-action, .story-chapter-cta, a[data-slot="button"], button[data-slot="button"]) { box-shadow: inset 0 1px 0 oklch(1 0 0 / .12), 0 2px 0 oklch(0 0 0 / .55); transition: transform .08s, box-shadow .08s; }
@@ -348,3 +350,26 @@
   .gateway-editorial .story-chapter .story-feature-rows > div { flex: 0 0 78%; scroll-snap-align: start; padding: 18px; border: 1px solid color-mix(in oklab, var(--tp, var(--color-primary)) 25%, var(--color-border)); border-radius: 14px; background: color-mix(in oklab, var(--tp, var(--color-primary)) 5%, var(--color-card)); }
   .gateway-editorial .story-chapter .story-card-photograph, .gateway-editorial .story-everyday { display: none; }
 }
+
+/* Product chapter deck: vertical story on desktop, one swipeable chapter at a time on phones. */
+.chapter-deck-tabs, .chapter-deck-nav { display: none; }
+@media (hover: hover) and (pointer: fine) and (min-width: 640px) {
+  .gateway-editorial .story-chapter[data-topic]::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: 0; transition: opacity .4s; background: radial-gradient(520px circle at var(--spot-x, 50%) var(--spot-y, 0%), color-mix(in oklab, var(--tp) 9%, transparent), transparent 65%); }
+  .gateway-editorial .story-chapter[data-topic]:hover::after { opacity: 1; }
+}
+@media (max-width: 639px) {
+  .chapter-deck { padding-block: 36px 8px; border-block: 1px solid var(--color-border); }
+  .chapter-deck-tabs { display: flex; gap: 8px; overflow-x: auto; padding: 0 20px 14px; scrollbar-width: none; position: sticky; top: 64px; z-index: 5; background: linear-gradient(var(--color-background) 80%, transparent); }
+  .chapter-deck-tabs::-webkit-scrollbar { display: none; }
+  .chapter-deck-tabs button { flex: 0 0 auto; padding: 8px 14px; border-radius: 999px; font: 500 12px/1 var(--font-mono); letter-spacing: .02em; color: var(--color-muted-foreground); border: 1px solid var(--color-border); background: var(--color-card); transition: color .2s, border-color .2s, background .2s; }
+  .chapter-deck-tabs button[aria-current="true"] { color: oklch(0.15 0.02 160); background: var(--tp); border-color: color-mix(in oklab, var(--tp) 70%, white); }
+  .chapter-deck-rail { display: flex; align-items: flex-start; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none; transition: height .3s ease; }
+  .chapter-deck-rail::-webkit-scrollbar { display: none; }
+  .chapter-deck-rail > .story-chapter { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; scroll-snap-stop: always; padding-block: 24px 32px; }
+  .gateway-editorial .chapter-deck-rail > .story-chapter[data-topic] { border: 1px solid color-mix(in oklab, var(--tp) 22%, transparent); border-inline: 0; background: radial-gradient(90% 50% at 50% 0%, color-mix(in oklab, var(--tp) 7%, transparent), transparent 70%); }
+  .chapter-deck-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px 0; font: 12px/1.2 var(--font-mono); color: var(--color-muted-foreground); }
+  .chapter-deck-nav span { text-align: center; }
+  .chapter-deck-nav button { display: grid; place-items: center; width: 40px; height: 40px; flex: 0 0 auto; border-radius: 999px; border: 1px solid color-mix(in oklab, var(--tp, var(--color-primary)) 35%, var(--color-border)); color: var(--tp, var(--color-primary)); background: var(--color-card); box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 2px 0 oklch(0 0 0 / .55); }
+  .chapter-deck-nav button:active { transform: translateY(1.5px); box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 .5px 0 oklch(0 0 0 / .55); }
+}
+@media (max-width: 639px) and (prefers-reduced-motion: reduce) { .chapter-deck-rail { scroll-behavior: auto; transition: none; } }
