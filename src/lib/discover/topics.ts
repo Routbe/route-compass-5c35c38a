@@ -12,6 +12,7 @@ export const TOPIC_SLUGS = [
   "questions",
   "workspaces",
   "developers",
+  "bookings",
 ] as const;
 export type TopicSlug = (typeof TOPIC_SLUGS)[number];
 
@@ -43,6 +44,7 @@ export const TOPIC_CARD_ACCENT: Record<TopicSlug, readonly [string, string]> = {
   questions: ["#FF719E", "#FF9F4C"],
   workspaces: ["#CBAAFF", "#92C1FD"],
   developers: ["#6EF593", "#59D7B9"],
+  bookings: ["#E989E1", "#FEB6D1"],
 };
 
 /** One fixed code-drawn preview card per product page and locale. */
@@ -67,6 +69,7 @@ export const TOPICS: Record<TopicSlug, TopicMeta> = {
   questions: { primary: "/info/anonymous-questions", docs: ["/info/anonymous-questions", "/info/answers-and-stories", "/about/anonymous-questions", "/info/parental-consent"] },
   workspaces: { primary: "/solutions/agencies", docs: ["/solutions/agencies", "/product/custom-domains", "/features/asset-manager", "/features/design-studio"] },
   developers: { primary: "/developers", docs: ["/developers", "/developer/identity-oauth", "/developer/ai-mcp", "/developer/webhooks", "/developer/credentials", "/about/open-source"] },
+  bookings: { primary: "/info/bookings", docs: ["/info/bookings", "/info/payment-pages", "/info/profiles", "/developer/ai-mcp"] },
 };
 
 export type TopicCopy = {
@@ -108,8 +111,13 @@ export type DiscoverUi = {
 
 export type DiscoverCopy = { ui: DiscoverUi; topics: Record<TopicSlug, TopicCopy> };
 
-/** The product line a detail page belongs to, if any (first match in TOPICS order). */
+/**
+ * The product line a detail page belongs to, if any: the topic whose main page
+ * it is wins, otherwise the first topic that lists it (TOPICS order).
+ */
 export function topicForPath(path: string): TopicSlug | null {
+  const own = TOPIC_SLUGS.find((slug) => TOPICS[slug].primary === path);
+  if (own) return own;
   for (const slug of TOPIC_SLUGS) {
     const meta = TOPICS[slug];
     if (meta.primary === path || meta.docs.includes(path)) return slug;

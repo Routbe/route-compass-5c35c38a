@@ -15,6 +15,7 @@ export const STATIC_SITEMAP_ENTRIES: SitemapEntry[] = [
   { path: "/discover/questions", changefreq: "monthly", priority: 0.8 },
   { path: "/discover/workspaces", changefreq: "monthly", priority: 0.8 },
   { path: "/discover/developers", changefreq: "monthly", priority: 0.8 },
+  { path: "/discover/bookings", changefreq: "monthly", priority: 0.8 },
   { path: "/studio", changefreq: "monthly", priority: 1.0 },
   { path: "/contact", changefreq: "monthly", priority: 0.7 },
   { path: "/press", changefreq: "monthly", priority: 0.6 },

@@ -10,7 +10,7 @@ const discover = (slug: TopicSlug) => `/discover/${slug}`;
 export const MENU_TARGETS = {
   generator: { tool: "/qr", about: discover("qr-studio") },
   studio: { tool: "/studio", about: discover("profiles") },
-  agenda: { tool: "/agenda", about: "/info/bookings" },
+  agenda: { tool: "/agenda", about: discover("bookings") },
   batch: { tool: "/batch", about: "/product/batch-engine" },
   links: { tool: "/dashboard/routes", about: discover("links") },
   domains: { tool: "/product/custom-domains", about: "/product/custom-domains" },
