@@ -60,11 +60,12 @@ beforeAll(async () => {
     create function public.rout_current_user_id() returns uuid language sql stable as $$ select nullif(current_setting('rout.current_user_id', true), '')::uuid $$;
   `);
   for (const f of ["104_booking_engine", "110_booking_custom_fields", "0144_booking_tokens", "0216_booking_public_boundary",
-    "0217_booking_internal_revoke", "0218_booking_holds_and_limits"]) {
+    "0217_booking_internal_revoke", "0218_booking_holds_and_limits", "0219_booking_public_sessions"]) {
     await db.exec(readFileSync(`db/${f}.sql`, "utf8"));
   }
-  // Applying 0218 twice must be harmless.
+  // Applying 0218 and 0219 twice must be harmless.
   await db.exec(readFileSync("db/0218_booking_holds_and_limits.sql", "utf8"));
+  await db.exec(readFileSync("db/0219_booking_public_sessions.sql", "utf8"));
   await db.exec(`
     insert into public.booking_event_types (id, user_id, slug, title, duration_minutes, buffer_after_minutes, minimum_notice_hours, max_days_ahead)
       values ('${SOLO}', '${A}', 'intro', 'Intro', 30, 15, 0, 30);
@@ -324,5 +325,72 @@ describe("public view and privileges", () => {
     await db.exec("update public.booking_holds set created_at = now() - interval '10 minutes', expires_at = now() - interval '2 minutes'");
     const n = await db.query<{ n: number }>("select public.rout_booking_release_expired(100) as n");
     expect(n.rows[0]!.n).toBe(1);
+  });
+});
+
+describe("db/0219: group sessions in the slot list follow the booking rules", () => {
+  type S = { host_ordinal: number; start_utc: string; block_start_utc: string; block_end_utc: string; open: boolean };
+  const sessions = async (type: string, holdId: unknown = null) =>
+    (await db.query<S>("select * from public.rout_booking_public_sessions($1::uuid, now(), now() + interval '30 days', $2::uuid)", [type, holdId])).rows;
+
+  it("a partly filled session keeps its own start open and publishes its block", async () => {
+    expect((await create(SEATS, at("12:00")))["ok"]).toBe(true);
+    const r = await sessions(SEATS);
+    expect(r).toHaveLength(1);
+    expect(r[0]!.open).toBe(true);
+    expect(new Date(r[0]!.start_utc).toISOString()).toBe(new Date(at("12:00")).toISOString());
+    expect(new Date(r[0]!.block_end_utc).toISOString()).toBe(new Date(at("13:00")).toISOString());
+    // The booking functions agree: the same start is joinable, an overlapping other start is not.
+    expect((await hold(SEATS, at("12:30"), OTHER))["reason"]).toBe("slot_taken");
+    expect((await hold(SEATS, at("12:00"), OTHER))["ok"]).toBe(true);
+  });
+
+  it("one booking + another visitor's hold fills capacity 2: the start closes", async () => {
+    await create(SEATS, at("12:00"));
+    await hold(SEATS, at("12:00"), OTHER);
+    const r = await sessions(SEATS);
+    expect(r).toHaveLength(1);
+    expect(r[0]!.open).toBe(false);
+    expect((await hold(SEATS, at("12:00")))["reason"]).toBe("slot_taken");
+  });
+
+  it("two holds of other visitors also fill it, the holder still sees their own seat", async () => {
+    const mine = await hold(SEATS, at("12:00"));
+    await hold(SEATS, at("12:00"), OTHER);
+    expect((await sessions(SEATS))[0]!.open).toBe(false);
+    expect((await sessions(SEATS, mine["holdId"]))[0]!.open).toBe(true);
+  });
+
+  it("a partly filled group session blocks the host for every other event type", async () => {
+    await create(SEATS, at("12:00"));
+    const r = await sessions(SOLO);
+    expect(r).toHaveLength(1);
+    expect(r[0]!.open).toBe(false);
+    expect((await hold(SOLO, at("12:15")))["reason"]).toBe("slot_taken");
+  });
+
+  it("a cancelled booking or an expired hold no longer counts", async () => {
+    await create(SEATS, at("12:00"));
+    await db.exec("update public.bookings set status = 'cancelled'");
+    await hold(SEATS, at("14:00"), OTHER);
+    await db.exec("update public.booking_holds set created_at = now() - interval '6 minutes', expires_at = now() - interval '1 second'");
+    expect(await sessions(SEATS)).toHaveLength(0);
+  });
+
+  it("returns only times, nothing for a hidden type, and rout_app may call it", async () => {
+    await create(SEATS, at("12:00"));
+    const r = await sessions(SEATS);
+    expect(Object.keys(r[0]!).sort()).toEqual(["block_end_utc", "block_start_utc", "host_ordinal", "open", "start_utc"]);
+    await db.exec(`update public.booking_event_types set is_active = false where id = '${SEATS}'`);
+    try {
+      expect(await sessions(SEATS)).toHaveLength(0);
+    } finally {
+      await db.exec(`update public.booking_event_types set is_active = true where id = '${SEATS}'`);
+    }
+    await db.exec("begin; set local role rout_app;");
+    try {
+      const n = await db.query("select * from public.rout_booking_public_sessions($1::uuid, now(), now() + interval '30 days', null)", [SEATS]);
+      expect(n.rows).toHaveLength(1);
+    } finally { await db.exec("rollback"); }
   });
 });
