@@ -1,13 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-/** Deletes logins of converted accounts past their 30-day sunset. Protected by LOVABLE_CRON_SECRET. */
+/** Deletes logins of converted accounts past their 30-day sunset. Protected by cronGuard (CRON_SECRET or LOVABLE_CRON_SECRET, constant-time). */
 async function handle(request: Request) {
-  const secret = process.env["LOVABLE_CRON_SECRET"];
-  if (!secret) return new Response("Not configured", { status: 503 });
-  const provided =
-    request.headers.get("x-cron-secret") ??
-    (request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
-  if (provided !== secret) return new Response("Unauthorized", { status: 401 });
+  const { cronGuard } = await import("@/lib/cron-auth");
+  const denied = await cronGuard(request);
+  if (denied) return denied;
 
   const { scrubSunsetAccounts } = await import("@/lib/workspace-conversion.server");
   return Response.json({ success: true, ...(await scrubSunsetAccounts()) });

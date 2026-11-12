@@ -2,15 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 
 /**
  * Periodieke scan van openstaande overschrijvingen: houdt betalingen exact één
- * week open en verklaart ze daarna verlopen. Beveiligd met LOVABLE_CRON_SECRET.
+ * week open en verklaart ze daarna verlopen. Beveiligd met cronGuard (CRON_SECRET of LOVABLE_CRON_SECRET, constant-time).
  */
 async function handle(request: Request) {
-  const secret = process.env["LOVABLE_CRON_SECRET"];
-  if (!secret) return new Response("Not configured", { status: 503 });
-  const provided =
-    request.headers.get("x-cron-secret") ??
-    (request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
-  if (provided !== secret) return new Response("Unauthorized", { status: 401 });
+  const { cronGuard } = await import("@/lib/cron-auth");
+  const denied = await cronGuard(request);
+  if (denied) return denied;
 
   try {
     const { runTransferWindowScan } = await import("@/lib/transfer-window.server");
