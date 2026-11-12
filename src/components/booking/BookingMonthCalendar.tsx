@@ -106,6 +106,7 @@ export function BookingMonthCalendar({ counts, activeDay, today, onPick }: Props
                   <button
                     type="button"
                     data-day={c.day}
+                    data-spatial-control="calendar-day"
                     tabIndex={c.day === focusable ? 0 : -1}
                     aria-disabled={!available}
                     aria-current={c.day === today ? "date" : undefined}
@@ -117,8 +118,8 @@ export function BookingMonthCalendar({ counts, activeDay, today, onPick }: Props
                       "relative flex aspect-square w-full flex-col items-center justify-center rounded-lg text-sm tabular-nums transition-colors",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
                       !c.inMonth && "invisible",
-                      available && !selected && "bg-secondary font-semibold text-foreground hover:bg-secondary/70",
-                      !available && c.inMonth && "cursor-default text-muted-foreground/60",
+                      available && !selected && "border border-border bg-secondary font-semibold text-foreground shadow-sm hover:border-foreground/30 hover:bg-secondary/70",
+                      !available && c.inMonth && "cursor-default border border-transparent bg-transparent text-muted-foreground/50 line-through decoration-muted-foreground/20",
                       selected && "bg-primary font-semibold text-primary-foreground",
                       c.day === today && !selected && "ring-1 ring-inset ring-border",
                     )}

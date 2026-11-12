@@ -193,7 +193,7 @@ export default function BookPublic({ eventTypeId, selectedStart, initial }: { ev
             <li className="flex items-center gap-2"><Clock className="h-4 w-4 text-muted-foreground" />{t("booking.public.minutes", { n: et.durationMinutes })}</li>
             <li className="flex items-center gap-2"><LocIcon className="h-4 w-4 text-muted-foreground" />{t(`booking.type.location.${et.locationKind}`)}</li>
             <li className="flex items-center gap-2"><CalendarClock className="h-4 w-4 text-muted-foreground" />{et.priceCents != null ? `€ ${(et.priceCents / 100).toFixed(2)}` : t("booking.public.free")}</li>
-            <li className="flex items-center gap-2"><Globe className="h-4 w-4 text-muted-foreground" />{prefs ? t("booking.public.timezone", { tz }) : t("booking.public.timezoneDetecting")}</li>
+            <li className="flex items-center gap-2"><Globe className="h-4 w-4 text-muted-foreground" />{prefs ? t("booking.public.timezone", { tz: tz.split("/").pop()!.replace(/_/g, " ") }) : t("booking.public.timezoneDetecting")}</li>
           </ul>
         </section>
 
@@ -217,8 +217,8 @@ export default function BookPublic({ eventTypeId, selectedStart, initial }: { ev
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h3 className="text-sm font-semibold first-letter:uppercase" aria-live="polite">{activeDay ? dayLabel(activeDay) : t("booking.public.pickTime")}</h3>
                   <ToggleGroup type="single" size="sm" value={hourCycle} onValueChange={(v) => { if (v === "h12" || v === "h23") setClockPref(v); }} aria-label={t("booking.public.timeFormat")}>
-                    <ToggleGroupItem value="h12" className="h-7 px-2 text-xs">{t("booking.public.h12")}</ToggleGroupItem>
-                    <ToggleGroupItem value="h23" className="h-7 px-2 text-xs">{t("booking.public.h24")}</ToggleGroupItem>
+                    <ToggleGroupItem value="h12" className="h-7 px-2.5 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{t("booking.public.h12")}</ToggleGroupItem>
+                    <ToggleGroupItem value="h23" className="h-7 px-2.5 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{t("booking.public.h24")}</ToggleGroupItem>
                   </ToggleGroup>
                 </div>
                 <TimezonePicker value={tz} device={prefs.device} onChange={setZone} />
