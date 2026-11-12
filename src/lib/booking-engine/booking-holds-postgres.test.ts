@@ -66,6 +66,15 @@ beforeAll(async () => {
   // Applying 0218 and 0219 twice must be harmless.
   await db.exec(readFileSync("db/0218_booking_holds_and_limits.sql", "utf8"));
   await db.exec(readFileSync("db/0219_booking_public_sessions.sql", "utf8"));
+  // Live state before 0220: RLS on, owner scope on connected_calendars, the open 0154 policy on calendar_events.
+  await db.exec(`
+    alter table public.connected_calendars enable row level security;
+    alter table public.calendar_events enable row level security;
+    create policy rout_scope on public.connected_calendars using (user_id = public.rout_current_user_id()) with check (user_id = public.rout_current_user_id());
+    create policy rout_server on public.calendar_events to rout_app using (true) with check (true);
+  `);
+  await db.exec(readFileSync("db/0220_calendar_events_owner_scope.sql", "utf8"));
+  await db.exec(readFileSync("db/0220_calendar_events_owner_scope.sql", "utf8"));
   await db.exec(`
     insert into public.booking_event_types (id, user_id, slug, title, duration_minutes, buffer_after_minutes, minimum_notice_hours, max_days_ahead)
       values ('${SOLO}', '${A}', 'intro', 'Intro', 30, 15, 0, 30);
@@ -392,5 +401,40 @@ describe("db/0219: group sessions in the slot list follow the booking rules", ()
       const n = await db.query("select * from public.rout_booking_public_sessions($1::uuid, now(), now() + interval '30 days', null)", [SEATS]);
       expect(n.rows).toHaveLength(1);
     } finally { await db.exec("rollback"); }
+  });
+});
+
+describe("db/0220: external calendar busy times belong to their owner only", () => {
+  const CAL_A = "44444444-4444-4444-8444-444444444444";
+  const CAL_B = "55555555-5555-4555-8555-555555555555";
+  const hash = (c: string) => c.repeat(64);
+  beforeEach(async () => {
+    await db.exec(`delete from public.calendar_events; delete from public.connected_calendars;
+      insert into public.connected_calendars (id, user_id, adapter, credentials_ciphertext, credentials_iv)
+        values ('${CAL_A}', '${A}', 'ics', 'x', 'y'), ('${CAL_B}', '${B}', 'ics', 'x', 'y');
+      insert into public.calendar_events (calendar_id, provider_id, start_utc, end_utc)
+        values ('${CAL_A}', '${hash("a")}', '${at("10:00")}', '${at("11:00")}'), ('${CAL_B}', '${hash("b")}', '${at("10:00")}', '${at("11:00")}');`);
+  });
+  async function asUser<T>(user: string | null, fn: () => Promise<T>): Promise<T> {
+    await db.exec(`begin; set local role rout_app; select set_config('rout.current_user_id', '${user ?? ""}', true);`);
+    try { return await fn(); } finally { await db.exec("rollback"); }
+  }
+
+  it("a member sees and replaces only their own calendar's busy times", async () => {
+    const seen = await asUser(A, async () => (await db.query<{ calendar_id: string }>("select calendar_id from public.calendar_events")).rows);
+    expect(seen.map((r) => r.calendar_id)).toEqual([CAL_A]);
+    const removed = await asUser(A, async () => (await db.query("delete from public.calendar_events returning id")).rows.length);
+    expect(removed).toBe(1);
+    await expect(asUser(A, () => db.query("insert into public.calendar_events (calendar_id, provider_id, start_utc, end_utc) values ($1, $2, $3, $4)",
+      [CAL_B, hash("c"), at("12:00"), at("13:00")]))).rejects.toThrow(/row-level security/);
+  });
+
+  it("without a session nothing is visible", async () => {
+    expect(await asUser(null, async () => (await db.query("select 1 from public.calendar_events")).rows.length)).toBe(0);
+  });
+
+  it("the booking check still sees every host's busy times", async () => {
+    expect((await hold(SOLO, at("10:15"), OTHER))["reason"]).toBe("slot_taken");
+    expect((await hold(SOLO, at("12:00"), OTHER))["ok"]).toBe(true);
   });
 });
