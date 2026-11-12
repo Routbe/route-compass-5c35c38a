@@ -99,3 +99,10 @@
 - [x] Docs-pagina's: "Zo werkt het", "Veelgestelde vragen", "Verder met ROUT" vertalen
 - [ ] Boekingen fase 2 (soft-lock 5 min + aftelklok, limieten per gast): wacht op akkoord voor databasewijziging op live Neon
 - [ ] Herstelkluis v2 (Argon2id, wachttijd, Merkle): wacht op 4 keuzes van eigenaar (docs/security/recovery-vault-design.md §7)
+
+## Nieuwe vraag (12-11): deelafbeeldingen in meerdere formaten
+- [x] Profiel- en uitnodigingskaarten (anoniem bericht, steun, fooi, afspraak) in 4 formaten: linkvoorbeeld 1200×630, vierkant 1080×1080, staand 1080×1350, story 1080×1920 (binnen de veilige zones)
+- [x] Studio: paneel om elk formaat te bekijken en te downloaden (NL/EN/FR/DE), in "Delen" en "Social Sharing & SEO"
+- [x] Ontbrekende deelafbeeldingen: alias-steun, alias-fooi, alias-feedback en workspace-feedback
+- [ ] Alias-agenda: deelafbeelding pas toevoegen na nagaan of /u/<naam>/agenda altijd een alias is
+
