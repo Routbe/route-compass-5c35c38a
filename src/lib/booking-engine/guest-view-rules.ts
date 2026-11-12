@@ -164,6 +164,19 @@ const FALLBACK_ZONES = [
   "America/Halifax", "America/St_Johns", "America/Sao_Paulo", "America/Argentina/Buenos_Aires", "America/Mexico_City", "America/Bogota",
 ];
 
+/** Current names for the legacy ids some engines still return (ICU keeps the 1990s spellings). */
+const MODERN_ZONE: Record<string, string> = {
+  "Asia/Calcutta": "Asia/Kolkata", "Asia/Katmandu": "Asia/Kathmandu", "Europe/Kiev": "Europe/Kyiv", "Asia/Saigon": "Asia/Ho_Chi_Minh",
+  "Asia/Rangoon": "Asia/Yangon", "America/Godthab": "America/Nuuk", "Atlantic/Faeroe": "Atlantic/Faroe", "Pacific/Truk": "Pacific/Chuuk",
+  "Pacific/Ponape": "Pacific/Pohnpei", "Pacific/Enderbury": "Pacific/Kanton", "America/Buenos_Aires": "America/Argentina/Buenos_Aires",
+  "Etc/UTC": "UTC", "Etc/GMT": "UTC", "GMT": "UTC", "Etc/Universal": "UTC", "Etc/Zulu": "UTC",
+};
+/** The modern spelling of a zone when this runtime accepts it, else the id as given. */
+export function canonicalZone(id: string): string {
+  const m = MODERN_ZONE[id];
+  return m && isValidTimeZone(m) ? m : id;
+}
+
 function cityOf(id: string): { city: string; region: string } {
   const parts = id.split("/");
   return { city: (parts[parts.length - 1] ?? id).replace(/_/g, " "), region: parts.length > 1 ? parts[0]! : "" };
@@ -182,7 +195,7 @@ export function timezoneOptions(at: Date, extra: readonly string[] = []): ZoneOp
   } catch {
     ids = FALLBACK_ZONES;
   }
-  const all = new Set<string>(["UTC", ...ids, ...extra.filter(isValidTimeZone)]);
+  const all = new Set<string>(["UTC", ...ids, ...extra.filter(isValidTimeZone)].map(canonicalZone));
   return [...all].map((id) => {
     const offsetMinutes = zoneOffset(id, at);
     return { id, ...cityOf(id), offsetMinutes, offsetLabel: formatOffset(offsetMinutes) };

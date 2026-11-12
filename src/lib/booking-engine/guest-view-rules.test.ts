@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  addDays, dayPeriod, defaultHourCycle, formatOffset, formatSlotTime, groupByPeriod, groupSlotsByDay, isValidTimeZone,
+  addDays, canonicalZone, dayPeriod, defaultHourCycle, formatOffset, formatSlotTime, groupByPeriod, groupSlotsByDay, isValidTimeZone,
   matchesZone, monthGrid, monthsBetween, timezoneOptions, weekStartFor, zoneOffset,
 } from "./guest-view-rules";
 
@@ -104,9 +104,19 @@ describe("time-zone list", () => {
     expect(ids("utc+1")).toContain("Europe/Brussels");
     expect(ids("bogotá")).toContain("America/Bogota");
   });
+  it("uses current names, never both spellings", () => {
+    const ids = timezoneOptions(at, ["Asia/Calcutta"]).map((z) => z.id);
+    expect(ids).toContain("Asia/Kolkata");
+    expect(ids).not.toContain("Asia/Calcutta");
+    expect(ids).toContain("Europe/Kyiv");
+    expect(ids).not.toContain("Europe/Kiev");
+    expect(new Set(ids).size).toBe(ids.length);
+  });
   it("accepts only real zones", () => {
     expect(isValidTimeZone("Europe/Brussels")).toBe(true);
     expect(isValidTimeZone("Mars/Olympus")).toBe(false);
     expect(isValidTimeZone(42)).toBe(false);
+    expect(canonicalZone("Asia/Katmandu")).toBe("Asia/Kathmandu");
+    expect(canonicalZone("Europe/Brussels")).toBe("Europe/Brussels");
   });
 });
