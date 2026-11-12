@@ -119,6 +119,14 @@
 .dsc-topic-title { font-family: var(--font-display); font-size: 25px; line-height: 1.15; }
 .dsc-topic-more { margin-top: auto; padding-top: 14px; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--dsc-muted); }
 .dsc-topic:hover .dsc-topic-more { color: var(--tp); }
+/* Three columns: a lone last tile becomes one wide card instead of leaving two empty cells. */
+@media (min-width: 961px) {
+  .dsc-tiles > li:last-child:nth-child(3n + 1) { grid-column: 1 / -1; }
+  .dsc-tiles > li:last-child:nth-child(3n + 1) .dsc-topic { flex-direction: row; }
+  .dsc-tiles > li:last-child:nth-child(3n + 1) .dsc-topic-visual { flex: 0 0 calc((100% - 32px) / 3); height: auto; min-height: 200px; border-bottom: 0; border-right: 1px solid var(--dsc-edge); }
+  .dsc-tiles > li:last-child:nth-child(3n + 1) .dsc-topic-copy { justify-content: center; padding-inline: 40px; }
+  .dsc-tiles > li:last-child:nth-child(3n + 1) .dsc-topic-more { margin-top: 8px; }
+}
 
 /* Reveal */
 .dsc-reveal { transition: opacity 700ms ease, transform 700ms cubic-bezier(.2,.7,.2,1); }
