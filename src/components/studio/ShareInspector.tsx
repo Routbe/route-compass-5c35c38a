@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { ProfileDisplayPrefs } from "@/lib/profile-display";
 import { profilePreviewPath } from "@/lib/profile-preview";
+import { ShareImageFormats } from "@/components/studio/ShareImageFormats";
 
 interface Props {
   prefs: ProfileDisplayPrefs;
@@ -76,6 +77,7 @@ export function ShareInspector({ prefs, onPrefChange, displayName, bio, handle, 
               )}
             </div>
           </div>
+          {handle ? <ShareImageFormats handle={handle} space={space ?? "root"} isPublic={space === "workspace" || prefs.publicProfile} /> : null}
         </section>
   );
 }
