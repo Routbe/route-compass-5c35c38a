@@ -7,14 +7,25 @@
 export type HourCycle = "h12" | "h23";
 export type DayPeriod = "morning" | "afternoon" | "evening";
 export type GridCell = { day: string; inMonth: boolean };
-export type ZoneOption = { id: string; city: string; region: string; offsetMinutes: number; offsetLabel: string };
+export type ZoneOption = {
+  id: string;
+  city: string;
+  region: string;
+  offsetMinutes: number;
+  offsetLabel: string;
+};
 
 const dayFmt = new Map<string, Intl.DateTimeFormat>();
 /** Day key (YYYY-MM-DD) of an instant on the wall clock of `tz`. */
 export function localDayKey(iso: string, tz: string): string {
   let f = dayFmt.get(tz);
   if (!f) {
-    f = new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" });
+    f = new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
     dayFmt.set(tz, f);
   }
   return f.format(new Date(iso));
@@ -46,7 +57,10 @@ export function dayPeriod(iso: string, tz: string): DayPeriod {
 }
 
 /** Times of one day split into morning / afternoon / evening, empty groups left out. */
-export function groupByPeriod(slots: readonly string[], tz: string): { period: DayPeriod; slots: string[] }[] {
+export function groupByPeriod(
+  slots: readonly string[],
+  tz: string,
+): { period: DayPeriod; slots: string[] }[] {
   const order: DayPeriod[] = ["morning", "afternoon", "evening"];
   const m = new Map<DayPeriod, string[]>();
   for (const s of slots) {
@@ -67,14 +81,27 @@ export function defaultHourCycle(locale: string): HourCycle {
 }
 
 /** 24 h keeps two digits (09:30) so columns align; 12 h drops the leading zero (9:30 AM) as clocks do. */
-export function formatSlotTime(iso: string, locale: string, tz: string, hourCycle: HourCycle): string {
-  return new Intl.DateTimeFormat(locale, { hour: hourCycle === "h12" ? "numeric" : "2-digit", minute: "2-digit", hourCycle, timeZone: tz }).format(new Date(iso));
+export function formatSlotTime(
+  iso: string,
+  locale: string,
+  tz: string,
+  hourCycle: HourCycle,
+): string {
+  return new Intl.DateTimeFormat(locale, {
+    hour: hourCycle === "h12" ? "numeric" : "2-digit",
+    minute: "2-digit",
+    hourCycle,
+    timeZone: tz,
+  }).format(new Date(iso));
 }
 
 /** Monday for the European locales; a locale that reports another first day (e.g. en-US) keeps it. */
 export function weekStartFor(locale: string): 0 | 1 {
   try {
-    const l = new Intl.Locale(locale) as Intl.Locale & { getWeekInfo?: () => { firstDay: number }; weekInfo?: { firstDay: number } };
+    const l = new Intl.Locale(locale) as Intl.Locale & {
+      getWeekInfo?: () => { firstDay: number };
+      weekInfo?: { firstDay: number };
+    };
     const first = l.getWeekInfo?.().firstDay ?? l.weekInfo?.firstDay;
     if (first === 7) return 0;
     if (first === 1) return 1;
@@ -114,7 +141,10 @@ export function monthsBetween(firstDay: string, lastDay: string): string[] {
     out.push(k);
     if (k >= end) break;
     m += 1;
-    if (m > 12) { m = 1; y += 1; }
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
   }
   return out;
 }
@@ -141,36 +171,109 @@ export function formatOffset(minutes: number): string {
   if (minutes === 0) return "GMT";
   const sign = minutes > 0 ? "+" : "-";
   const a = Math.abs(minutes);
-  const h = Math.floor(a / 60), m = a % 60;
+  const h = Math.floor(a / 60),
+    m = a % 60;
   return `GMT${sign}${h}${m ? `:${pad(m)}` : ""}`;
 }
 
 /** Offset of `tz` at `at`, in minutes east of UTC. */
 export function zoneOffset(tz: string, at: Date): number {
   const parts = Object.fromEntries(
-    new Intl.DateTimeFormat("en-US", { timeZone: tz, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" })
-      .formatToParts(at).map((p) => [p.type, p.value]),
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      hourCycle: "h23",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    })
+      .formatToParts(at)
+      .map((p) => [p.type, p.value]),
   );
-  const asUtc = Date.UTC(Number(parts["year"]), Number(parts["month"]) - 1, Number(parts["day"]), Number(parts["hour"]) % 24, Number(parts["minute"]), Number(parts["second"]));
+  const asUtc = Date.UTC(
+    Number(parts["year"]),
+    Number(parts["month"]) - 1,
+    Number(parts["day"]),
+    Number(parts["hour"]) % 24,
+    Number(parts["minute"]),
+    Number(parts["second"]),
+  );
   return Math.round((asUtc - Math.floor(at.getTime() / 1000) * 1000) / 60000);
 }
 
 const FALLBACK_ZONES = [
-  "UTC", "Europe/Brussels", "Europe/Amsterdam", "Europe/Paris", "Europe/Berlin", "Europe/London", "Europe/Lisbon", "Europe/Madrid",
-  "Europe/Rome", "Europe/Zurich", "Europe/Vienna", "Europe/Warsaw", "Europe/Athens", "Europe/Helsinki", "Europe/Istanbul", "Europe/Moscow",
-  "Africa/Casablanca", "Africa/Lagos", "Africa/Cairo", "Africa/Johannesburg", "Africa/Nairobi", "Asia/Dubai", "Asia/Karachi",
-  "Asia/Kolkata", "Asia/Kathmandu", "Asia/Dhaka", "Asia/Bangkok", "Asia/Jakarta", "Asia/Singapore", "Asia/Shanghai", "Asia/Hong_Kong",
-  "Asia/Tokyo", "Asia/Seoul", "Australia/Perth", "Australia/Adelaide", "Australia/Sydney", "Pacific/Auckland", "Pacific/Honolulu",
-  "America/Anchorage", "America/Los_Angeles", "America/Denver", "America/Chicago", "America/New_York", "America/Toronto",
-  "America/Halifax", "America/St_Johns", "America/Sao_Paulo", "America/Argentina/Buenos_Aires", "America/Mexico_City", "America/Bogota",
+  "UTC",
+  "Europe/Brussels",
+  "Europe/Amsterdam",
+  "Europe/Paris",
+  "Europe/Berlin",
+  "Europe/London",
+  "Europe/Lisbon",
+  "Europe/Madrid",
+  "Europe/Rome",
+  "Europe/Zurich",
+  "Europe/Vienna",
+  "Europe/Warsaw",
+  "Europe/Athens",
+  "Europe/Helsinki",
+  "Europe/Istanbul",
+  "Europe/Moscow",
+  "Africa/Casablanca",
+  "Africa/Lagos",
+  "Africa/Cairo",
+  "Africa/Johannesburg",
+  "Africa/Nairobi",
+  "Asia/Dubai",
+  "Asia/Karachi",
+  "Asia/Kolkata",
+  "Asia/Kathmandu",
+  "Asia/Dhaka",
+  "Asia/Bangkok",
+  "Asia/Jakarta",
+  "Asia/Singapore",
+  "Asia/Shanghai",
+  "Asia/Hong_Kong",
+  "Asia/Tokyo",
+  "Asia/Seoul",
+  "Australia/Perth",
+  "Australia/Adelaide",
+  "Australia/Sydney",
+  "Pacific/Auckland",
+  "Pacific/Honolulu",
+  "America/Anchorage",
+  "America/Los_Angeles",
+  "America/Denver",
+  "America/Chicago",
+  "America/New_York",
+  "America/Toronto",
+  "America/Halifax",
+  "America/St_Johns",
+  "America/Sao_Paulo",
+  "America/Argentina/Buenos_Aires",
+  "America/Mexico_City",
+  "America/Bogota",
 ];
 
 /** Current names for the legacy ids some engines still return (ICU keeps the 1990s spellings). */
 const MODERN_ZONE: Record<string, string> = {
-  "Asia/Calcutta": "Asia/Kolkata", "Asia/Katmandu": "Asia/Kathmandu", "Europe/Kiev": "Europe/Kyiv", "Asia/Saigon": "Asia/Ho_Chi_Minh",
-  "Asia/Rangoon": "Asia/Yangon", "America/Godthab": "America/Nuuk", "Atlantic/Faeroe": "Atlantic/Faroe", "Pacific/Truk": "Pacific/Chuuk",
-  "Pacific/Ponape": "Pacific/Pohnpei", "Pacific/Enderbury": "Pacific/Kanton", "America/Buenos_Aires": "America/Argentina/Buenos_Aires",
-  "Etc/UTC": "UTC", "Etc/GMT": "UTC", "GMT": "UTC", "Etc/Universal": "UTC", "Etc/Zulu": "UTC",
+  "Asia/Calcutta": "Asia/Kolkata",
+  "Asia/Katmandu": "Asia/Kathmandu",
+  "Europe/Kiev": "Europe/Kyiv",
+  "Asia/Saigon": "Asia/Ho_Chi_Minh",
+  "Asia/Rangoon": "Asia/Yangon",
+  "America/Godthab": "America/Nuuk",
+  "Atlantic/Faeroe": "Atlantic/Faroe",
+  "Pacific/Truk": "Pacific/Chuuk",
+  "Pacific/Ponape": "Pacific/Pohnpei",
+  "Pacific/Enderbury": "Pacific/Kanton",
+  "America/Buenos_Aires": "America/Argentina/Buenos_Aires",
+  "Etc/UTC": "UTC",
+  "Etc/GMT": "UTC",
+  GMT: "UTC",
+  "Etc/Universal": "UTC",
+  "Etc/Zulu": "UTC",
 };
 /** The modern spelling of a zone when this runtime accepts it, else the id as given. */
 export function canonicalZone(id: string): string {
@@ -180,7 +283,10 @@ export function canonicalZone(id: string): string {
 
 function cityOf(id: string): { city: string; region: string } {
   const parts = id.split("/");
-  return { city: (parts[parts.length - 1] ?? id).replace(/_/g, " "), region: parts.length > 1 ? parts[0]! : "" };
+  return {
+    city: (parts[parts.length - 1] ?? id).replace(/_/g, " "),
+    region: parts.length > 1 ? parts[0]! : "",
+  };
 }
 
 /**
@@ -189,7 +295,8 @@ function cityOf(id: string): { city: string; region: string } {
  * `extra` zones are always included, even when the runtime list misses them.
  */
 export function timezoneOptions(at: Date, extra: readonly string[] = []): ZoneOption[] {
-  const supported = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf;
+  const supported = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] })
+    .supportedValuesOf;
   let ids: string[];
   try {
     ids = supported ? supported("timeZone") : FALLBACK_ZONES;
@@ -197,16 +304,30 @@ export function timezoneOptions(at: Date, extra: readonly string[] = []): ZoneOp
     ids = FALLBACK_ZONES;
   }
   const all = new Set<string>(["UTC", ...ids, ...extra.filter(isValidTimeZone)].map(canonicalZone));
-  return [...all].map((id) => {
-    const offsetMinutes = zoneOffset(id, at);
-    return { id, ...cityOf(id), offsetMinutes, offsetLabel: formatOffset(offsetMinutes) };
-  }).sort((a, b) => a.offsetMinutes - b.offsetMinutes || a.city.localeCompare(b.city));
+  return [...all]
+    .map((id) => {
+      const offsetMinutes = zoneOffset(id, at);
+      return { id, ...cityOf(id), offsetMinutes, offsetLabel: formatOffset(offsetMinutes) };
+    })
+    .sort((a, b) => a.offsetMinutes - b.offsetMinutes || a.city.localeCompare(b.city));
 }
 
 /** Case- and accent-insensitive match on city, region, full id or offset ("brus", "gmt+1", "new york"). */
 export function matchesZone(option: ZoneOption, query: string): boolean {
-  const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[_\s]+/g, " ").trim();
+  const norm = (s: string) =>
+    s
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[_\s]+/g, " ")
+      .trim();
   const q = norm(query);
   if (!q) return true;
-  return [option.city, option.region, option.id, option.offsetLabel, `utc${option.offsetLabel.slice(3)}`].some((f) => norm(f).includes(q));
+  return [
+    option.city,
+    option.region,
+    option.id,
+    option.offsetLabel,
+    `utc${option.offsetLabel.slice(3)}`,
+  ].some((f) => norm(f).includes(q));
 }

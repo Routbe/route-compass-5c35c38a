@@ -1,19 +1,44 @@
 import { describe, expect, it } from "vitest";
 import {
-  addDays, canonicalZone, dayPeriod, defaultHourCycle, formatOffset, formatSlotTime, groupByPeriod, groupSlotsByDay, isValidTimeZone,
-  matchesZone, monthGrid, monthsBetween, timezoneOptions, weekStartFor, zoneOffset,
+  addDays,
+  canonicalZone,
+  dayPeriod,
+  defaultHourCycle,
+  formatOffset,
+  formatSlotTime,
+  groupByPeriod,
+  groupSlotsByDay,
+  isValidTimeZone,
+  matchesZone,
+  monthGrid,
+  monthsBetween,
+  timezoneOptions,
+  weekStartFor,
+  zoneOffset,
 } from "./guest-view-rules";
 
 describe("slots per day follow the visitor's time zone", () => {
   const slots = ["2026-11-12T23:30:00Z", "2026-11-12T09:00:00Z", "2026-11-13T08:00:00Z"];
   it("23:30 UTC is still the 12th in London but already the 13th in Brussels", () => {
-    expect([...groupSlotsByDay(slots, "Europe/London").keys()]).toEqual(["2026-11-12", "2026-11-13"]);
-    expect(groupSlotsByDay(slots, "Europe/London").get("2026-11-12")).toEqual(["2026-11-12T09:00:00Z", "2026-11-12T23:30:00Z"]);
-    expect(groupSlotsByDay(slots, "Europe/Brussels").get("2026-11-13")).toEqual(["2026-11-12T23:30:00Z", "2026-11-13T08:00:00Z"]);
+    expect([...groupSlotsByDay(slots, "Europe/London").keys()]).toEqual([
+      "2026-11-12",
+      "2026-11-13",
+    ]);
+    expect(groupSlotsByDay(slots, "Europe/London").get("2026-11-12")).toEqual([
+      "2026-11-12T09:00:00Z",
+      "2026-11-12T23:30:00Z",
+    ]);
+    expect(groupSlotsByDay(slots, "Europe/Brussels").get("2026-11-13")).toEqual([
+      "2026-11-12T23:30:00Z",
+      "2026-11-13T08:00:00Z",
+    ]);
   });
   it("in Tokyo the same instants fall on other days", () => {
     expect([...groupSlotsByDay(slots, "Asia/Tokyo").keys()]).toEqual(["2026-11-12", "2026-11-13"]);
-    expect(groupSlotsByDay(slots, "Asia/Tokyo").get("2026-11-13")).toEqual(["2026-11-12T23:30:00Z", "2026-11-13T08:00:00Z"]);
+    expect(groupSlotsByDay(slots, "Asia/Tokyo").get("2026-11-13")).toEqual([
+      "2026-11-12T23:30:00Z",
+      "2026-11-13T08:00:00Z",
+    ]);
   });
 });
 
@@ -38,7 +63,9 @@ describe("12 or 24 hours", () => {
     expect(defaultHourCycle("fr")).toBe("h23");
   });
   it("shows the chosen clock in the chosen zone", () => {
-    expect(formatSlotTime("2026-11-12T14:30:00Z", "en-US", "Europe/Brussels", "h12")).toMatch(/^3:30\sPM$/);
+    expect(formatSlotTime("2026-11-12T14:30:00Z", "en-US", "Europe/Brussels", "h12")).toMatch(
+      /^3:30\sPM$/,
+    );
     expect(formatSlotTime("2026-11-12T14:30:00Z", "en-US", "Europe/Brussels", "h23")).toBe("15:30");
     expect(formatSlotTime("2026-11-12T14:30:00Z", "nl", "America/New_York", "h23")).toBe("09:30");
   });
@@ -56,11 +83,18 @@ describe("month grid", () => {
     expect(monthGrid("2026-11", 0)[0]![0]).toEqual({ day: "2026-11-01", inMonth: true });
   });
   it("February in a leap year has 29 days", () => {
-    const days = monthGrid("2028-02", 1).flat().filter((c) => c.inMonth);
+    const days = monthGrid("2028-02", 1)
+      .flat()
+      .filter((c) => c.inMonth);
     expect(days).toHaveLength(29);
   });
   it("lists every month between two days, across a year end", () => {
-    expect(monthsBetween("2026-11-12", "2027-02-01")).toEqual(["2026-11", "2026-12", "2027-01", "2027-02"]);
+    expect(monthsBetween("2026-11-12", "2027-02-01")).toEqual([
+      "2026-11",
+      "2026-12",
+      "2027-01",
+      "2027-02",
+    ]);
     expect(monthsBetween("2026-11-12", "2026-11-30")).toEqual(["2026-11"]);
   });
   it("moves days across month and year ends", () => {
@@ -93,7 +127,8 @@ describe("time-zone list", () => {
     expect(list.some((z) => z.id === "UTC")).toBe(true);
     expect(list.some((z) => z.id === "Europe/Brussels")).toBe(true);
     expect(list.some((z) => z.id === "Not/AZone")).toBe(false);
-    for (let i = 1; i < list.length; i++) expect(list[i]!.offsetMinutes).toBeGreaterThanOrEqual(list[i - 1]!.offsetMinutes);
+    for (let i = 1; i < list.length; i++)
+      expect(list[i]!.offsetMinutes).toBeGreaterThanOrEqual(list[i - 1]!.offsetMinutes);
   });
   it("search finds a city, a region, an offset, ignoring case and accents", () => {
     const list = timezoneOptions(at);
