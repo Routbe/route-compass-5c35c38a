@@ -345,7 +345,7 @@
   .gateway-editorial .story-chapter { padding-block: 56px; }
   .gateway-editorial .story-chapter .story-prose { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
   .gateway-editorial .story-chapter .story-product-stage { max-height: 340px; overflow: hidden; margin-top: 28px; mask-image: linear-gradient(to bottom, black 80%, transparent); }
-  .gateway-editorial .story-chapter .story-feature-rows { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; margin-inline: -20px; padding: 4px 20px 12px; scrollbar-width: none; }
+  .gateway-editorial .story-chapter .story-feature-rows { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 24px; margin-inline: -24px; padding: 4px 24px 12px; scrollbar-width: none; }
   .gateway-editorial .story-chapter .story-feature-rows::-webkit-scrollbar { display: none; }
   .gateway-editorial .story-chapter .story-feature-rows > div { flex: 0 0 78%; scroll-snap-align: start; padding: 18px; border: 1px solid color-mix(in oklab, var(--tp, var(--color-primary)) 25%, var(--color-border)); border-radius: 14px; background: color-mix(in oklab, var(--tp, var(--color-primary)) 5%, var(--color-card)); }
   .gateway-editorial .story-chapter .story-card-photograph, .gateway-editorial .story-everyday { display: none; }
