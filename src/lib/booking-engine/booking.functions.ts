@@ -22,14 +22,57 @@ export const getPublicEventType = createServerFn({ method: "GET" })
   });
 
 export const getPublicSlots = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) => z.object({ id: uuid }).parse(input))
+  .inputValidator((input: unknown) => z.object({ id: uuid, holdId: uuid.nullable().optional() }).parse(input))
   .handler(async ({ data }) => {
     const s = await import("./public.server");
     try {
-      return { slots: await s.publicSlots(data.id) };
+      return { slots: await s.publicSlots(data.id, new Date(), data.holdId ?? null) };
     } catch (e) {
       console.error("[booking] slots", e instanceof Error ? e.message : "error");
       return { slots: [] as string[] };
+    }
+  });
+
+/** Edge-set client IP first: a visitor can write their own x-forwarded-for. */
+async function visitorIp(): Promise<string> {
+  const { getRequestHeader } = await import("@tanstack/react-start/server");
+  return (getRequestHeader("cf-connecting-ip") ?? getRequestHeader("x-real-ip") ?? getRequestHeader("x-forwarded-for")?.split(",")[0] ?? "unknown").trim();
+}
+
+const holdSecret = z.string().regex(/^[a-f0-9]{64}$/);
+
+/** Clicking a slot reserves it for 5 minutes while the visitor fills in the form (db/0218). */
+export const holdBookingSlot = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z.object({
+      eventTypeId: uuid, startUtc: z.string().datetime({ offset: false }),
+      replace: z.object({ id: uuid, secret: holdSecret }).nullable().default(null),
+    }).parse(input))
+  .handler(async ({ data }) => {
+    await (await import("@/lib/platform-features.server")).assertPlatformFeature("bookings");
+    const { hitRateLimit, sha256Hex } = await import("@/lib/rate-limit-db.server");
+    const ip = await visitorIp();
+    const rl = await hitRateLimit("booking_hold", ip, { limit: 40, windowSec: 3600 });
+    if (!rl.ok) return { ok: false as const, reason: "rate_limited" as const };
+    const { holdSlot } = await import("./book.server");
+    try {
+      // Holds live ≤ 6 minutes; the digest only lets the database cap holds per visitor.
+      return await holdSlot(data.eventTypeId, data.startUtc, await sha256Hex(`rout-booking-hold:v1:${ip}`), data.replace);
+    } catch (e) {
+      console.error("[booking] hold", e instanceof Error ? e.message : "error");
+      return { ok: false as const, reason: "unavailable" as const };
+    }
+  });
+
+export const releaseBookingSlot = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ holdId: uuid, secret: holdSecret }).parse(input))
+  .handler(async ({ data }) => {
+    const { releaseSlotHold } = await import("./book.server");
+    try {
+      return { ok: await releaseSlotHold(data.holdId, data.secret) };
+    } catch (e) {
+      console.error("[booking] release", e instanceof Error ? e.message : "error");
+      return { ok: false };
     }
   });
 
@@ -38,9 +81,7 @@ export const createBooking = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await (await import("@/lib/platform-features.server")).assertPlatformFeature("bookings");
     const { hitRateLimit } = await import("@/lib/rate-limit-db.server");
-    const { getRequestHeader } = await import("@tanstack/react-start/server");
-    // The edge-set client IP first: a visitor can write their own x-forwarded-for.
-    const ip = (getRequestHeader("cf-connecting-ip") ?? getRequestHeader("x-real-ip") ?? getRequestHeader("x-forwarded-for")?.split(",")[0] ?? "unknown").trim();
+    const ip = await visitorIp();
     const rl = await hitRateLimit("booking_create", ip, { limit: 10, windowSec: 3600 });
     if (!rl.ok) return { ok: false as const, reason: "rate_limited" as const };
     const { bookSlot } = await import("./book.server");

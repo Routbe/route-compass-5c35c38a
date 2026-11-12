@@ -9,6 +9,27 @@ import type { EventTypeRules } from "./types";
 
 export type HostDay = { day: string; bits: DayBits };
 
+/**
+ * What the database adds on top of the cached bits (db/0218 public constraints):
+ * `busy` = another visitor's live hold (block range), `limit` = a calendar period
+ * in which the host reached a limit of this type. Both are per host ordinal.
+ */
+export type HostConstraint = { kind: "busy" | "limit"; startUtc: Date; endUtc: Date };
+
+/** Drop the starts a host cannot take because of holds (block overlap) or full periods (start inside). */
+export function applyHostConstraints(starts: Date[], constraints: HostConstraint[], rules: EventTypeRules): Date[] {
+  if (!constraints.length) return starts;
+  const before = rules.bufferBeforeMinutes * 60000;
+  const after = (rules.durationMinutes + rules.bufferAfterMinutes) * 60000;
+  return starts.filter((s) => {
+    const t = s.getTime();
+    return !constraints.some((c) => {
+      const a = c.startUtc.getTime(), b = c.endUtc.getTime();
+      return c.kind === "limit" ? t >= a && t < b : t - before < b && t + after > a;
+    });
+  });
+}
+
 /** Consecutive days from the first to the last given day; missing days are busy. */
 export function contiguousDays(days: HostDay[]): HostDay[] {
   if (!days.length) return [];
@@ -33,11 +54,13 @@ export function mergeHostStarts(
   collective: boolean,
   rules: EventTypeRules,
   now: Date,
+  constraints: Map<number, HostConstraint[]> = new Map(),
 ): Date[] {
   const perHost: Set<number>[] = [];
   for (let ordinal = 1; ordinal <= hostCount; ordinal++) {
     const days = contiguousDays(byHost.get(ordinal) ?? []);
-    perHost.push(new Set(bookableStarts(days, rules, now).map((d) => d.getTime())));
+    const starts = applyHostConstraints(bookableStarts(days, rules, now), constraints.get(ordinal) ?? [], rules);
+    perHost.push(new Set(starts.map((d) => d.getTime())));
   }
   if (!perHost.length) return [];
   let result: Set<number>;
@@ -47,4 +70,14 @@ export function mergeHostStarts(
     result = new Set(perHost.flatMap((s) => [...s]));
   }
   return [...result].sort((a, b) => a - b).map((t) => new Date(t));
+}
+
+/**
+ * A business-day window needs that many calendar days cached: n working days
+ * span at most ceil(n·7/5) + 2 calendar days (a weekend on each side).
+ * The stored max-days-ahead is raised to cover it, never above 365.
+ */
+export function effectiveMaxDaysAhead(maxDaysAhead: number, horizonBusinessDays: number | null): number {
+  if (horizonBusinessDays == null) return maxDaysAhead;
+  return Math.min(365, Math.max(maxDaysAhead, Math.ceil((horizonBusinessDays * 7) / 5) + 2));
 }

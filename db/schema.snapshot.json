@@ -5233,6 +5233,62 @@
           "default": "1",
           "identity": null,
           "generated": null
+        },
+        {
+          "name": "limit_per_day",
+          "type": "integer",
+          "notNull": false,
+          "default": null,
+          "identity": null,
+          "generated": null
+        },
+        {
+          "name": "limit_per_week",
+          "type": "integer",
+          "notNull": false,
+          "default": null,
+          "identity": null,
+          "generated": null
+        },
+        {
+          "name": "limit_per_month",
+          "type": "integer",
+          "notNull": false,
+          "default": null,
+          "identity": null,
+          "generated": null
+        },
+        {
+          "name": "limit_per_guest",
+          "type": "integer",
+          "notNull": false,
+          "default": null,
+          "identity": null,
+          "generated": null
+        },
+        {
+          "name": "horizon_business_days",
+          "type": "integer",
+          "notNull": false,
+          "default": null,
+          "identity": null,
+          "generated": null
+        },
+        {
+          "name": "adjacent_only",
+          "type": "boolean",
+          "notNull": true,
+          "default": "false",
+          "identity": null,
+          "generated": null
+        },
+        {
+          "name": "rules_timezone",
+          "type": "text",
+          "notNull": false,
+          "default": null,
+          "identity": null,
+          "generated": null
         }
       ],
       "constraints": [
@@ -5305,6 +5361,11 @@
           "name": "booking_event_types_personal_strict",
           "kind": "c",
           "def": "CHECK (((workspace_id IS NOT NULL) OR (routing_strategy = 'STRICT'::text)))"
+        },
+        {
+          "name": "booking_event_types_phase2_ranges",
+          "kind": "c",
+          "def": "CHECK ((((limit_per_day IS NULL) OR ((limit_per_day >= 1) AND (limit_per_day <= 200))) AND ((limit_per_week IS NULL) OR ((limit_per_week >= 1) AND (limit_per_week <= 1000))) AND ((limit_per_month IS NULL) OR ((limit_per_month >= 1) AND (limit_per_month <= 5000))) AND ((limit_per_guest IS NULL) OR ((limit_per_guest >= 1) AND (limit_per_guest <= 50))) AND ((horizon_business_days IS NULL) OR ((horizon_business_days >= 1) AND (horizon_business_days <= 260))) AND ((rules_timezone IS NULL) OR ((char_length(rules_timezone) >= 1) AND (char_length(rules_timezone) <= 64)))))"
         },
         {
           "name": "booking_event_types_pkey",
@@ -5382,6 +5443,162 @@
           "INSERT",
           "SELECT",
           "UPDATE"
+        ]
+      }
+    },
+    {
+      "schema": "public",
+      "name": "booking_holds",
+      "columns": [
+        {
+          "name": "hold_id",
+          "type": "uuid",
+          "notNull": true,
+          "default": null,
+          "identity": null,
+          "generated": null
+        },
+        {
+          "name": "host_user_id",
+          "type": "uuid",
+          "notNull": true,
+          "default": null,
+          "identity": null,
+          "generated": null
+        },
+        {
+          "name": "event_type_id",
+          "type": "uuid",
+          "notNull": true,
+          "default": null,
+          "identity": null,
+          "generated": null
+        },
+        {
+          "name": "start_utc",
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "default": null,
+          "identity": null,
+          "generated": null
+        },
+        {
+          "name": "block_start_utc",
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "default": null,
+          "identity": null,
+          "generated": null
+        },
+        {
+          "name": "block_end_utc",
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "default": null,
+          "identity": null,
+          "generated": null
+        },
+        {
+          "name": "shared_slot",
+          "type": "boolean",
+          "notNull": true,
+          "default": "false",
+          "identity": null,
+          "generated": null
+        },
+        {
+          "name": "secret_digest",
+          "type": "bytea",
+          "notNull": true,
+          "default": null,
+          "identity": null,
+          "generated": null
+        },
+        {
+          "name": "client_digest",
+          "type": "bytea",
+          "notNull": true,
+          "default": null,
+          "identity": null,
+          "generated": null
+        },
+        {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "default": null,
+          "identity": null,
+          "generated": null
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "default": "now()",
+          "identity": null,
+          "generated": null
+        }
+      ],
+      "constraints": [
+        {
+          "name": "booking_holds_check",
+          "kind": "c",
+          "def": "CHECK (((block_end_utc > block_start_utc) AND (block_start_utc <= start_utc) AND (expires_at > created_at)))"
+        },
+        {
+          "name": "booking_holds_client_digest_check",
+          "kind": "c",
+          "def": "CHECK ((octet_length(client_digest) = 32))"
+        },
+        {
+          "name": "booking_holds_event_type_id_fkey",
+          "kind": "f",
+          "def": "FOREIGN KEY (event_type_id) REFERENCES booking_event_types(id) ON DELETE CASCADE"
+        },
+        {
+          "name": "booking_holds_host_user_id_fkey",
+          "kind": "f",
+          "def": "FOREIGN KEY (host_user_id) REFERENCES users(id) ON DELETE CASCADE"
+        },
+        {
+          "name": "booking_holds_no_overlap",
+          "kind": "x",
+          "def": "EXCLUDE USING gist (host_user_id WITH =, tstzrange(block_start_utc, block_end_utc, '[)'::text) WITH &&) WHERE ((NOT shared_slot))"
+        },
+        {
+          "name": "booking_holds_pkey",
+          "kind": "p",
+          "def": "PRIMARY KEY (hold_id, host_user_id)"
+        },
+        {
+          "name": "booking_holds_secret_digest_check",
+          "kind": "c",
+          "def": "CHECK ((octet_length(secret_digest) = 32))"
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX booking_holds_client ON public.booking_holds USING btree (client_digest, expires_at)",
+        "CREATE INDEX booking_holds_expiry ON public.booking_holds USING btree (expires_at)",
+        "CREATE INDEX booking_holds_host_time ON public.booking_holds USING btree (host_user_id, block_start_utc)"
+      ],
+      "triggers": [],
+      "rls": true,
+      "forceRls": false,
+      "policies": [
+        {
+          "name": "rout_owner_read",
+          "permissive": true,
+          "roles": [
+            "public"
+          ],
+          "cmd": "SELECT",
+          "using": "(host_user_id = rout_current_user_id())",
+          "check": null
+        }
+      ],
+      "grants": {
+        "rout_app": [
+          "SELECT"
         ]
       }
     },
@@ -27355,6 +27572,12 @@
     },
     {
       "schema": "public",
+      "name": "rout_booking_adjacent_ok",
+      "args": "p_host uuid, p_block_start timestamp with time zone, p_block_end timestamp with time zone",
+      "def": "CREATE OR REPLACE FUNCTION public.rout_booking_adjacent_ok(p_host uuid, p_block_start timestamp with time zone, p_block_end timestamp with time zone)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\n  with g as (select floor(extract(epoch from p_block_start) / 900)::bigint as a, ceil(extract(epoch from p_block_end) / 900)::bigint as b)\n  select public.rout_booking_edge_busy(p_host, to_timestamp((g.a - 1) * 900), to_timestamp(g.a * 900))\n      or public.rout_booking_edge_busy(p_host, to_timestamp(g.b * 900), to_timestamp((g.b + 1) * 900))\n  from g\n$function$"
+    },
+    {
+      "schema": "public",
       "name": "rout_booking_cache_free",
       "args": "p_host uuid, p_from timestamp with time zone, p_to timestamp with time zone",
       "def": "CREATE OR REPLACE FUNCTION public.rout_booking_cache_free(p_host uuid, p_from timestamp with time zone, p_to timestamp with time zone)\n RETURNS boolean\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare\n  first_slot bigint := floor(extract(epoch from p_from) / 900);\n  last_slot bigint := ceil(extract(epoch from p_to) / 900);\n  s bigint; day_start bigint; bits text; cur date; want date;\nbegin\n  if p_to <= p_from then return false; end if;\n  cur := null;\n  for s in first_slot .. last_slot - 1 loop\n    want := (to_timestamp(s * 900) at time zone 'utc')::date;\n    if cur is distinct from want then\n      select c.free_bits::text into bits from public.availability_cache c where c.user_id = p_host and c.day = want;\n      if bits is null then return false; end if;\n      cur := want;\n      day_start := floor(extract(epoch from (want::timestamp at time zone 'utc')) / 900);\n    end if;\n    if substr(bits, (s - day_start + 1)::int, 1) <> '1' then return false; end if;\n  end loop;\n  return true;\nend $function$"
@@ -27369,13 +27592,25 @@
       "schema": "public",
       "name": "rout_booking_create",
       "args": "p_event_type uuid, p_start timestamp with time zone, p_guest_name text, p_guest_email text, p_guest_timezone text, p_guest_note text, p_intake jsonb",
-      "def": "CREATE OR REPLACE FUNCTION public.rout_booking_create(p_event_type uuid, p_start timestamp with time zone, p_guest_name text, p_guest_email text, p_guest_timezone text, p_guest_note text, p_intake jsonb)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare\n  t public.booking_event_types%rowtype;\n  hosts uuid[]; candidates uuid[]; chosen uuid[];\n  bs timestamptz; be timestamptz; e timestamptz;\n  cap integer; shared boolean; st text; hold timestamptz;\n  grp uuid; ids uuid[] := '{}'; tok text; h uuid; i integer; new_id uuid;\nbegin\n  if not public.rout_booking_type_public(p_event_type) then return jsonb_build_object('ok', false, 'reason', 'inactive'); end if;\n  select * into t from public.booking_event_types where id = p_event_type;\n  if p_guest_name is null or char_length(btrim(p_guest_name)) not between 1 and 120\n     or p_guest_email is null or char_length(p_guest_email) not between 3 and 254 or position('@' in p_guest_email) < 2\n     or p_guest_timezone is null or char_length(p_guest_timezone) not between 1 and 64\n     or char_length(coalesce(p_guest_note, '')) > 2000\n     or (p_intake is not null and (jsonb_typeof(p_intake) <> 'object' or octet_length(p_intake::text) > 65536)) then\n    return jsonb_build_object('ok', false, 'reason', 'invalid_input');\n  end if;\n  if extract(epoch from p_start) % (t.slot_step_minutes * 60) <> 0 then\n    return jsonb_build_object('ok', false, 'reason', 'outside_availability');\n  end if;\n  if p_start < now() + make_interval(hours => t.minimum_notice_hours) then return jsonb_build_object('ok', false, 'reason', 'too_soon'); end if;\n  if p_start > now() + make_interval(days => t.max_days_ahead) then return jsonb_build_object('ok', false, 'reason', 'too_far'); end if;\n\n  e := p_start + make_interval(mins => t.duration_minutes);\n  bs := p_start - make_interval(mins => t.buffer_before_minutes);\n  be := e + make_interval(mins => t.buffer_after_minutes);\n  cap := greatest(1, t.resource_capacity);\n  shared := cap > 1;\n  st := case when t.price_cents is not null then 'pending_payment' when t.confirmation_mode = 'request' then 'requested' else 'confirmed' end;\n  hold := case when t.price_cents is not null then now() + interval '30 minutes' end;\n\n  select array_agg(user_id order by user_id) into hosts from public.booking_event_type_hosts where event_type_id = t.id;\n  -- Lock every host of the type for every UTC day the block touches, in global (host, day) order.\n  perform public.rout_booking_lock_hosts(hosts, bs, be);\n\n  if t.routing_strategy = 'COLLECTIVE' then\n    foreach h in array hosts loop\n      if not public.rout_booking_host_free(h, t.id, p_start, bs, be, cap) then\n        return jsonb_build_object('ok', false, 'reason', 'slot_taken');\n      end if;\n    end loop;\n    chosen := hosts;\n  else\n    -- STRICT: highest priority host. ROUND_ROBIN: free hosts, fewest booked minutes in the\n    -- 30 days around the slot, then priority, then id (deterministic).\n    select array_agg(x.user_id order by x.load, x.priority desc, x.user_id) into candidates from (\n      select h2.user_id, h2.priority,\n        case when t.routing_strategy = 'ROUND_ROBIN' then coalesce((\n          select sum(extract(epoch from (b.end_utc - b.start_utc)) / 60) from public.bookings b\n          where b.host_user_id = h2.user_id and b.status in ('held','pending_payment','requested','confirmed')\n            and b.start_utc >= p_start - interval '30 days' and b.start_utc < p_start + interval '30 days'), 0) else 0 end as load\n      from public.booking_event_type_hosts h2 where h2.event_type_id = t.id\n    ) x;\n    if t.routing_strategy = 'STRICT' then candidates := candidates[1:1]; end if;\n    chosen := null;\n    foreach h in array candidates loop\n      if public.rout_booking_host_free(h, t.id, p_start, bs, be, cap) then chosen := array[h]; exit; end if;\n    end loop;\n    if chosen is null then return jsonb_build_object('ok', false, 'reason', 'slot_taken'); end if;\n  end if;\n\n  grp := case when array_length(chosen, 1) > 1 then gen_random_uuid() end;\n  begin\n    for i in 1 .. array_length(chosen, 1) loop\n      new_id := gen_random_uuid();\n      insert into public.bookings (id, event_type_id, host_user_id, workspace_id, group_id, start_utc, end_utc,\n        block_start_utc, block_end_utc, status, guest_name, guest_email, guest_timezone, guest_note, hold_expires_at,\n        ics_uid, shared_slot, intake_answers)\n      values (new_id, t.id, chosen[i], t.workspace_id, grp, p_start, e, bs, be, st, btrim(p_guest_name), p_guest_email,\n        p_guest_timezone, nullif(p_guest_note, ''), hold, coalesce(grp, new_id)::text || '@rout.be', shared, p_intake);\n      ids := ids || new_id;\n      insert into public.availability_jobs (user_id, reason, run_after) values (chosen[i], 'booking', now() + interval '20 seconds')\n        on conflict (user_id) do update set reason = 'booking', run_after = least(public.availability_jobs.run_after, excluded.run_after);\n    end loop;\n  exception when exclusion_violation then\n    return jsonb_build_object('ok', false, 'reason', 'slot_taken');\n  end;\n  -- The guest link uses the first row's token; group actions resolve the whole group.\n  select booking_token into tok from public.bookings where id = ids[1];\n  return jsonb_build_object('ok', true, 'bookingIds', to_jsonb(ids), 'hostIds', to_jsonb(chosen), 'token', tok,\n    'status', st, 'holdExpiresAt', hold, 'groupId', grp);\nend $function$"
+      "def": "CREATE OR REPLACE FUNCTION public.rout_booking_create(p_event_type uuid, p_start timestamp with time zone, p_guest_name text, p_guest_email text, p_guest_timezone text, p_guest_note text, p_intake jsonb)\n RETURNS jsonb\n LANGUAGE sql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\n  select public.rout_booking_create(p_event_type, p_start, p_guest_name, p_guest_email, p_guest_timezone,\n    p_guest_note, p_intake, null::uuid, null::text)\n$function$"
+    },
+    {
+      "schema": "public",
+      "name": "rout_booking_create",
+      "args": "p_event_type uuid, p_start timestamp with time zone, p_guest_name text, p_guest_email text, p_guest_timezone text, p_guest_note text, p_intake jsonb, p_hold uuid, p_hold_secret text",
+      "def": "CREATE OR REPLACE FUNCTION public.rout_booking_create(p_event_type uuid, p_start timestamp with time zone, p_guest_name text, p_guest_email text, p_guest_timezone text, p_guest_note text, p_intake jsonb, p_hold uuid, p_hold_secret text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare\n  t public.booking_event_types%rowtype; problem text; chosen uuid[]; held uuid[];\n  bs timestamptz; be timestamptz; e timestamptz; cap integer; shared boolean; st text; hold timestamptz;\n  grp uuid; ids uuid[] := '{}'; tok text; h uuid; i integer; new_id uuid; own uuid;\nbegin\n  if not public.rout_booking_type_public(p_event_type) then return jsonb_build_object('ok', false, 'reason', 'inactive'); end if;\n  select * into t from public.booking_event_types where id = p_event_type;\n  if p_guest_name is null or char_length(btrim(p_guest_name)) not between 1 and 120\n     or p_guest_email is null or char_length(p_guest_email) not between 3 and 254 or position('@' in p_guest_email) < 2\n     or p_guest_timezone is null or char_length(p_guest_timezone) not between 1 and 64\n     or char_length(coalesce(p_guest_note, '')) > 2000\n     or (p_intake is not null and (jsonb_typeof(p_intake) <> 'object' or octet_length(p_intake::text) > 65536)) then\n    return jsonb_build_object('ok', false, 'reason', 'invalid_input');\n  end if;\n  problem := public.rout_booking_start_problem(t.id, p_start);\n  if problem is not null then return jsonb_build_object('ok', false, 'reason', problem); end if;\n\n  e := p_start + make_interval(mins => t.duration_minutes);\n  bs := p_start - make_interval(mins => t.buffer_before_minutes);\n  be := e + make_interval(mins => t.buffer_after_minutes);\n  cap := greatest(1, t.resource_capacity);\n  shared := cap > 1;\n  st := case when t.price_cents is not null then 'pending_payment' when t.confirmation_mode = 'request' then 'requested' else 'confirmed' end;\n  hold := case when t.price_cents is not null then now() + interval '30 minutes' end;\n\n  perform public.rout_booking_lock_type(t.id, p_start);\n\n  -- Per-guest cap on active future bookings of this type (a collective group counts once).\n  if t.limit_per_guest is not null and (\n      select count(distinct coalesce(b.group_id, b.id)) from public.bookings b\n      where b.event_type_id = t.id and lower(b.guest_email) = lower(p_guest_email) and b.end_utc > now()\n        and b.status in ('held','pending_payment','requested','confirmed')) >= t.limit_per_guest then\n    return jsonb_build_object('ok', false, 'reason', 'guest_limit');\n  end if;\n\n  if p_hold is not null and p_hold_secret ~ '^[a-f0-9]{64}$' then\n    select array_agg(x.host_user_id order by x.host_user_id) into held from public.booking_holds x\n    where x.hold_id = p_hold and x.event_type_id = t.id and x.start_utc = p_start and x.expires_at > now()\n      and x.secret_digest = sha256(convert_to(p_hold_secret, 'UTF8'));\n  end if;\n  if held is not null then\n    own := p_hold;\n    foreach h in array held loop\n      if not public.rout_booking_host_free_held(h, t.id, p_start, bs, be, cap, own) then\n        return jsonb_build_object('ok', false, 'reason', 'slot_taken');\n      end if;\n    end loop;\n    chosen := held;\n  else\n    chosen := public.rout_booking_pick_hosts(t.id, p_start, null);\n    if chosen is null then return jsonb_build_object('ok', false, 'reason', 'slot_taken'); end if;\n  end if;\n\n  if own is not null then delete from public.booking_holds where hold_id = own; end if;\n  grp := case when array_length(chosen, 1) > 1 then gen_random_uuid() end;\n  begin\n    for i in 1 .. array_length(chosen, 1) loop\n      new_id := gen_random_uuid();\n      insert into public.bookings (id, event_type_id, host_user_id, workspace_id, group_id, start_utc, end_utc,\n        block_start_utc, block_end_utc, status, guest_name, guest_email, guest_timezone, guest_note, hold_expires_at,\n        ics_uid, shared_slot, intake_answers)\n      values (new_id, t.id, chosen[i], t.workspace_id, grp, p_start, e, bs, be, st, btrim(p_guest_name), p_guest_email,\n        p_guest_timezone, nullif(p_guest_note, ''), hold, coalesce(grp, new_id)::text || '@rout.be', shared, p_intake);\n      ids := ids || new_id;\n      insert into public.availability_jobs (user_id, reason, run_after) values (chosen[i], 'booking', now() + interval '20 seconds')\n        on conflict (user_id) do update set reason = 'booking', run_after = least(public.availability_jobs.run_after, excluded.run_after);\n    end loop;\n  exception when exclusion_violation then\n    return jsonb_build_object('ok', false, 'reason', 'slot_taken');\n  end;\n  select booking_token into tok from public.bookings where id = ids[1];\n  return jsonb_build_object('ok', true, 'bookingIds', to_jsonb(ids), 'hostIds', to_jsonb(chosen), 'token', tok,\n    'status', st, 'holdExpiresAt', hold, 'groupId', grp);\nend $function$"
     },
     {
       "schema": "public",
       "name": "rout_booking_due_calendars",
       "args": "p_limit integer",
       "def": "CREATE OR REPLACE FUNCTION public.rout_booking_due_calendars(p_limit integer)\n RETURNS TABLE(id uuid, user_id uuid)\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\n  select c.id, c.user_id from public.connected_calendars c\n  where c.adapter in ('ics','caldav') and c.sync_status <> 'disconnected'\n    and (c.last_synced_at is null or c.last_synced_at < now() - interval '10 minutes')\n  order by c.last_synced_at nulls first limit least(greatest(p_limit, 1), 100)\n$function$"
+    },
+    {
+      "schema": "public",
+      "name": "rout_booking_edge_busy",
+      "args": "p_host uuid, p_from timestamp with time zone, p_to timestamp with time zone",
+      "def": "CREATE OR REPLACE FUNCTION public.rout_booking_edge_busy(p_host uuid, p_from timestamp with time zone, p_to timestamp with time zone)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\n  select not public.rout_booking_cache_free(p_host, p_from, p_to)\n    or exists (select 1 from public.bookings b where b.host_user_id = p_host\n      and b.status in ('held','pending_payment','requested','confirmed')\n      and tstzrange(b.block_start_utc, b.block_end_utc, '[)') && tstzrange(p_from, p_to, '[)'))\n$function$"
     },
     {
       "schema": "public",
@@ -27391,15 +27626,57 @@
     },
     {
       "schema": "public",
+      "name": "rout_booking_hold",
+      "args": "p_event_type uuid, p_start timestamp with time zone, p_client text, p_replace uuid, p_replace_secret text",
+      "def": "CREATE OR REPLACE FUNCTION public.rout_booking_hold(p_event_type uuid, p_start timestamp with time zone, p_client text, p_replace uuid, p_replace_secret text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare\n  t public.booking_event_types%rowtype; problem text; chosen uuid[]; h uuid;\n  secret text := encode(gen_random_bytes(32), 'hex'); hid uuid := gen_random_uuid();\n  exp timestamptz := now() + interval '5 minutes'; client bytea; bs timestamptz; be timestamptz;\nbegin\n  if not public.rout_booking_type_public(p_event_type) then return jsonb_build_object('ok', false, 'reason', 'inactive'); end if;\n  if p_client is null or p_client !~ '^[a-f0-9]{64}$' then return jsonb_build_object('ok', false, 'reason', 'invalid_input'); end if;\n  client := decode(p_client, 'hex');\n  select * into t from public.booking_event_types where id = p_event_type;\n  if p_replace is not null and p_replace_secret ~ '^[a-f0-9]{64}$' then\n    delete from public.booking_holds where hold_id = p_replace and secret_digest = sha256(convert_to(p_replace_secret, 'UTF8'));\n  end if;\n  problem := public.rout_booking_start_problem(t.id, p_start);\n  if problem is not null then return jsonb_build_object('ok', false, 'reason', problem); end if;\n  if (select count(distinct hold_id) from public.booking_holds where client_digest = client and expires_at > now()) >= 3 then\n    return jsonb_build_object('ok', false, 'reason', 'too_many_holds');\n  end if;\n  perform public.rout_booking_lock_type(t.id, p_start);\n  chosen := public.rout_booking_pick_hosts(t.id, p_start, null);\n  if chosen is null then return jsonb_build_object('ok', false, 'reason', 'slot_taken'); end if;\n  bs := p_start - make_interval(mins => t.buffer_before_minutes);\n  be := p_start + make_interval(mins => t.duration_minutes + t.buffer_after_minutes);\n  begin\n    foreach h in array chosen loop\n      insert into public.booking_holds (hold_id, host_user_id, event_type_id, start_utc, block_start_utc, block_end_utc,\n        shared_slot, secret_digest, client_digest, expires_at)\n      values (hid, h, t.id, p_start, bs, be, greatest(1, t.resource_capacity) > 1,\n        sha256(convert_to(secret, 'UTF8')), client, exp);\n    end loop;\n  exception when exclusion_violation then\n    return jsonb_build_object('ok', false, 'reason', 'slot_taken');\n  end;\n  return jsonb_build_object('ok', true, 'holdId', hid, 'secret', secret, 'expiresAt', exp, 'startUtc', p_start);\nend $function$"
+    },
+    {
+      "schema": "public",
+      "name": "rout_booking_hold_release",
+      "args": "p_hold uuid, p_secret text",
+      "def": "CREATE OR REPLACE FUNCTION public.rout_booking_hold_release(p_hold uuid, p_secret text)\n RETURNS boolean\n LANGUAGE sql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\n  with d as (delete from public.booking_holds where hold_id = p_hold and p_secret ~ '^[a-f0-9]{64}$'\n    and secret_digest = sha256(convert_to(p_secret, 'UTF8')) returning 1)\n  select count(*) > 0 from d\n$function$"
+    },
+    {
+      "schema": "public",
+      "name": "rout_booking_horizon_end",
+      "args": "p_business_days integer, p_max_days integer, p_zone text, p_now timestamp with time zone",
+      "def": "CREATE OR REPLACE FUNCTION public.rout_booking_horizon_end(p_business_days integer, p_max_days integer, p_zone text, p_now timestamp with time zone)\n RETURNS timestamp with time zone\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare d date; n integer := 0; cap timestamptz := p_now + make_interval(days => p_max_days);\nbegin\n  if p_business_days is null then return cap; end if;\n  d := (p_now at time zone p_zone)::date;\n  loop\n    if extract(isodow from d) < 6 then n := n + 1; end if;\n    exit when n >= p_business_days;\n    d := d + 1;\n  end loop;\n  return least(cap, ((d + 1)::timestamp) at time zone p_zone);\nend $function$"
+    },
+    {
+      "schema": "public",
       "name": "rout_booking_host_free",
       "args": "p_host uuid, p_event_type uuid, p_start timestamp with time zone, p_block_start timestamp with time zone, p_block_end timestamp with time zone, p_capacity integer",
       "def": "CREATE OR REPLACE FUNCTION public.rout_booking_host_free(p_host uuid, p_event_type uuid, p_start timestamp with time zone, p_block_start timestamp with time zone, p_block_end timestamp with time zone, p_capacity integer)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\n  select public.rout_booking_cache_free(p_host, p_block_start, p_block_end)\n    and not exists (\n      select 1 from public.bookings b where b.host_user_id = p_host\n        and b.status in ('held','pending_payment','requested','confirmed')\n        and tstzrange(b.block_start_utc, b.block_end_utc, '[)') && tstzrange(p_block_start, p_block_end, '[)')\n        and not (p_capacity > 1 and b.shared_slot and b.event_type_id = p_event_type and b.start_utc = p_start))\n    and (p_capacity <= 1 or (select count(*) from public.bookings b where b.host_user_id = p_host and b.shared_slot\n        and b.event_type_id = p_event_type and b.start_utc = p_start\n        and b.status in ('held','pending_payment','requested','confirmed')) < p_capacity)\n    and not exists (\n      select 1 from public.calendar_events ev join public.connected_calendars c on c.id = ev.calendar_id\n      where c.user_id = p_host and ev.is_blocking and ev.start_utc < p_block_end and ev.end_utc > p_block_start)\n$function$"
     },
     {
       "schema": "public",
+      "name": "rout_booking_host_free_held",
+      "args": "p_host uuid, p_event_type uuid, p_start timestamp with time zone, p_block_start timestamp with time zone, p_block_end timestamp with time zone, p_capacity integer, p_hold uuid",
+      "def": "CREATE OR REPLACE FUNCTION public.rout_booking_host_free_held(p_host uuid, p_event_type uuid, p_start timestamp with time zone, p_block_start timestamp with time zone, p_block_end timestamp with time zone, p_capacity integer, p_hold uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\n  select public.rout_booking_host_free(p_host, p_event_type, p_start, p_block_start, p_block_end, p_capacity)\n    and not exists (\n      select 1 from public.booking_holds x where x.host_user_id = p_host and x.expires_at > now()\n        and x.hold_id is distinct from p_hold\n        and tstzrange(x.block_start_utc, x.block_end_utc, '[)') && tstzrange(p_block_start, p_block_end, '[)')\n        and not (p_capacity > 1 and x.shared_slot and x.event_type_id = p_event_type and x.start_utc = p_start))\n    and (p_capacity <= 1 or (\n      (select count(*) from public.bookings b where b.host_user_id = p_host and b.shared_slot\n        and b.event_type_id = p_event_type and b.start_utc = p_start\n        and b.status in ('held','pending_payment','requested','confirmed'))\n      + (select count(*) from public.booking_holds x where x.host_user_id = p_host and x.shared_slot\n        and x.event_type_id = p_event_type and x.start_utc = p_start and x.expires_at > now()\n        and x.hold_id is distinct from p_hold)) < p_capacity)\n$function$"
+    },
+    {
+      "schema": "public",
       "name": "rout_booking_lock_hosts",
       "args": "p_hosts uuid[], p_from timestamp with time zone, p_to timestamp with time zone",
       "def": "CREATE OR REPLACE FUNCTION public.rout_booking_lock_hosts(p_hosts uuid[], p_from timestamp with time zone, p_to timestamp with time zone)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare h uuid; d date;\nbegin\n  for h in select x from unnest(p_hosts) x group by x order by x loop\n    d := (p_from at time zone 'utc')::date;\n    while d <= ((p_to - interval '1 microsecond') at time zone 'utc')::date loop\n      perform pg_advisory_xact_lock(hashtextextended('booking:' || h::text || ':' || d::text, 0));\n      d := d + 1;\n    end loop;\n  end loop;\nend $function$"
+    },
+    {
+      "schema": "public",
+      "name": "rout_booking_lock_type",
+      "args": "p_event_type uuid, p_start timestamp with time zone",
+      "def": "CREATE OR REPLACE FUNCTION public.rout_booking_lock_type(p_event_type uuid, p_start timestamp with time zone)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare t public.booking_event_types%rowtype; hosts uuid[]; bs timestamptz; be timestamptz;\nbegin\n  select * into t from public.booking_event_types where id = p_event_type;\n  select array_agg(user_id order by user_id) into hosts from public.booking_event_type_hosts where event_type_id = t.id;\n  bs := p_start - make_interval(mins => t.buffer_before_minutes);\n  be := p_start + make_interval(mins => t.duration_minutes + t.buffer_after_minutes);\n  perform public.rout_booking_lock_hosts(hosts, bs, be);\n  delete from public.booking_holds x where x.host_user_id = any(hosts) and x.expires_at <= now();\nend $function$"
+    },
+    {
+      "schema": "public",
+      "name": "rout_booking_pick_hosts",
+      "args": "p_event_type uuid, p_start timestamp with time zone, p_hold uuid",
+      "def": "CREATE OR REPLACE FUNCTION public.rout_booking_pick_hosts(p_event_type uuid, p_start timestamp with time zone, p_hold uuid)\n RETURNS uuid[]\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare\n  t public.booking_event_types%rowtype; bs timestamptz; be timestamptz; cap integer;\n  hosts uuid[]; candidates uuid[]; h uuid;\nbegin\n  select * into t from public.booking_event_types where id = p_event_type;\n  bs := p_start - make_interval(mins => t.buffer_before_minutes);\n  be := p_start + make_interval(mins => t.duration_minutes + t.buffer_after_minutes);\n  cap := greatest(1, t.resource_capacity);\n  if t.routing_strategy = 'COLLECTIVE' then\n    select array_agg(user_id order by user_id) into hosts from public.booking_event_type_hosts where event_type_id = t.id;\n    foreach h in array hosts loop\n      if not (public.rout_booking_host_free_held(h, t.id, p_start, bs, be, cap, p_hold)\n          and public.rout_booking_within_limits(t.id, h, p_start, p_hold)\n          and (not t.adjacent_only or public.rout_booking_adjacent_ok(h, bs, be))) then\n        return null;\n      end if;\n    end loop;\n    return hosts;\n  end if;\n  select array_agg(x.user_id order by x.load, x.priority desc, x.user_id) into candidates from (\n    select h2.user_id, h2.priority,\n      case when t.routing_strategy = 'ROUND_ROBIN' then coalesce((\n        select sum(extract(epoch from (b.end_utc - b.start_utc)) / 60) from public.bookings b\n        where b.host_user_id = h2.user_id and b.status in ('held','pending_payment','requested','confirmed')\n          and b.start_utc >= p_start - interval '30 days' and b.start_utc < p_start + interval '30 days'), 0) else 0 end as load\n    from public.booking_event_type_hosts h2 where h2.event_type_id = t.id) x;\n  if t.routing_strategy = 'STRICT' then candidates := candidates[1:1]; end if;\n  foreach h in array coalesce(candidates, '{}') loop\n    if public.rout_booking_host_free_held(h, t.id, p_start, bs, be, cap, p_hold)\n        and public.rout_booking_within_limits(t.id, h, p_start, p_hold)\n        and (not t.adjacent_only or public.rout_booking_adjacent_ok(h, bs, be)) then\n      return array[h];\n    end if;\n  end loop;\n  return null;\nend $function$"
+    },
+    {
+      "schema": "public",
+      "name": "rout_booking_public_constraints",
+      "args": "p_id uuid, p_from timestamp with time zone, p_to timestamp with time zone, p_hold uuid",
+      "def": "CREATE OR REPLACE FUNCTION public.rout_booking_public_constraints(p_id uuid, p_from timestamp with time zone, p_to timestamp with time zone, p_hold uuid)\n RETURNS TABLE(host_ordinal integer, kind text, start_utc timestamp with time zone, end_utc timestamp with time zone)\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare t public.booking_event_types%rowtype; r record; unit text; lim integer; zone text;\nbegin\n  if not public.rout_booking_type_public(p_id) then return; end if;\n  select * into t from public.booking_event_types where id = p_id;\n  if p_to > p_from + interval '400 days' then p_to := p_from + interval '400 days'; end if;\n  for r in select h.user_id, row_number() over (order by h.user_id)::integer as ord\n      from public.booking_event_type_hosts h where h.event_type_id = p_id loop\n    return query select r.ord, 'busy'::text, x.block_start_utc, x.block_end_utc\n      from public.booking_holds x where x.host_user_id = r.user_id and x.expires_at > now()\n        and x.hold_id is distinct from p_hold and x.block_end_utc > p_from and x.block_start_utc < p_to\n        and not (greatest(1, t.resource_capacity) > 1 and x.shared_slot and x.event_type_id = p_id);\n    zone := public.rout_booking_zone(t.rules_timezone, r.user_id);\n    foreach unit in array array['day', 'week', 'month'] loop\n      lim := case unit when 'day' then t.limit_per_day when 'week' then t.limit_per_week else t.limit_per_month end;\n      continue when lim is null;\n      return query\n        select r.ord, 'limit'::text, (q.p at time zone zone), ((q.p + ('1 ' || unit)::interval) at time zone zone)\n        from (\n          select date_trunc(unit, k.s at time zone zone) as p, count(distinct k.k) as n from (\n            select b.start_utc as s, case when b.shared_slot then 'S' || b.start_utc::text else b.id::text end as k\n            from public.bookings b where b.host_user_id = r.user_id and b.event_type_id = p_id\n              and b.status in ('held','pending_payment','requested','confirmed')\n              and b.start_utc >= p_from - interval '32 days' and b.start_utc < p_to + interval '32 days'\n            union all\n            select x.start_utc, case when x.shared_slot then 'S' || x.start_utc::text else 'H' || x.hold_id::text end\n            from public.booking_holds x where x.host_user_id = r.user_id and x.event_type_id = p_id\n              and x.expires_at > now() and x.hold_id is distinct from p_hold\n              and x.start_utc >= p_from - interval '32 days' and x.start_utc < p_to + interval '32 days') k\n          group by 1) q\n        where q.n >= lim;\n    end loop;\n  end loop;\nend $function$"
     },
     {
       "schema": "public",
@@ -27411,7 +27688,7 @@
       "schema": "public",
       "name": "rout_booking_public_event_type",
       "args": "p_id uuid",
-      "def": "CREATE OR REPLACE FUNCTION public.rout_booking_public_event_type(p_id uuid)\n RETURNS jsonb\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\n  select case when public.rout_booking_type_public(p_id) then (\n    select jsonb_build_object(\n      'id', t.id, 'title', t.title, 'description', t.description, 'durationMinutes', t.duration_minutes,\n      'priceCents', t.price_cents, 'currency', t.currency, 'locationKind', t.location_kind,\n      'confirmationMode', t.confirmation_mode, 'routingStrategy', t.routing_strategy,\n      'minimumNoticeHours', t.minimum_notice_hours, 'maxDaysAhead', t.max_days_ahead,\n      'slotStepMinutes', t.slot_step_minutes, 'bufferBeforeMinutes', t.buffer_before_minutes,\n      'bufferAfterMinutes', t.buffer_after_minutes, 'workspaceId', t.workspace_id,\n      'customFields', t.custom_fields, 'capacity', t.resource_capacity,\n      'hostName', coalesce(w.name, p.display_name),\n      'hostCount', (select count(*) from public.booking_event_type_hosts h where h.event_type_id = t.id))\n    from public.booking_event_types t\n    left join public.workspaces w on w.id = t.workspace_id\n    left join public.profiles p on p.id = t.user_id\n    where t.id = p_id) end\n$function$"
+      "def": "CREATE OR REPLACE FUNCTION public.rout_booking_public_event_type(p_id uuid)\n RETURNS jsonb\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\n  select case when public.rout_booking_type_public(p_id) then (\n    select jsonb_build_object(\n      'id', t.id, 'title', t.title, 'description', t.description, 'durationMinutes', t.duration_minutes,\n      'priceCents', t.price_cents, 'currency', t.currency, 'locationKind', t.location_kind,\n      'confirmationMode', t.confirmation_mode, 'routingStrategy', t.routing_strategy,\n      'minimumNoticeHours', t.minimum_notice_hours, 'maxDaysAhead', t.max_days_ahead,\n      'slotStepMinutes', t.slot_step_minutes, 'bufferBeforeMinutes', t.buffer_before_minutes,\n      'bufferAfterMinutes', t.buffer_after_minutes, 'workspaceId', t.workspace_id,\n      'customFields', t.custom_fields, 'capacity', t.resource_capacity,\n      'hostName', coalesce(w.name, p.display_name),\n      'hostCount', (select count(*) from public.booking_event_type_hosts h where h.event_type_id = t.id),\n      'adjacentOnly', t.adjacent_only, 'horizonBusinessDays', t.horizon_business_days,\n      'horizonEndUtc', public.rout_booking_horizon_end(t.horizon_business_days, t.max_days_ahead,\n        public.rout_booking_type_zone(t.id), now()),\n      'holdMinutes', 5, 'phase', 2)\n    from public.booking_event_types t\n    left join public.workspaces w on w.id = t.workspace_id\n    left join public.profiles p on p.id = t.user_id\n    where t.id = p_id) end\n$function$"
     },
     {
       "schema": "public",
@@ -27423,7 +27700,7 @@
       "schema": "public",
       "name": "rout_booking_release_expired",
       "args": "p_limit integer",
-      "def": "CREATE OR REPLACE FUNCTION public.rout_booking_release_expired(p_limit integer)\n RETURNS integer\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare r record; n integer := 0;\nbegin\n  for r in select id from public.bookings where status in ('held','pending_payment')\n      and hold_expires_at < now() - interval '5 minutes' order by hold_expires_at limit least(greatest(p_limit, 1), 500) loop\n    n := n + public.rout_booking_release_hold(r.id);\n  end loop;\n  return n;\nend $function$"
+      "def": "CREATE OR REPLACE FUNCTION public.rout_booking_release_expired(p_limit integer)\n RETURNS integer\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare r record; n integer := 0; m integer;\nbegin\n  for r in select id from public.bookings where status in ('held','pending_payment')\n      and hold_expires_at < now() - interval '5 minutes' order by hold_expires_at limit least(greatest(p_limit, 1), 500) loop\n    n := n + public.rout_booking_release_hold(r.id);\n  end loop;\n  delete from public.booking_holds where expires_at < now() - interval '1 minute';\n  get diagnostics m = row_count;\n  return n + m;\nend $function$"
     },
     {
       "schema": "public",
@@ -27445,9 +27722,33 @@
     },
     {
       "schema": "public",
+      "name": "rout_booking_start_problem",
+      "args": "p_event_type uuid, p_start timestamp with time zone",
+      "def": "CREATE OR REPLACE FUNCTION public.rout_booking_start_problem(p_event_type uuid, p_start timestamp with time zone)\n RETURNS text\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare t public.booking_event_types%rowtype;\nbegin\n  select * into t from public.booking_event_types where id = p_event_type;\n  if p_start is null or extract(epoch from p_start) % (t.slot_step_minutes * 60) <> 0 then return 'outside_availability'; end if;\n  if p_start < now() + make_interval(hours => t.minimum_notice_hours) then return 'too_soon'; end if;\n  if p_start >= public.rout_booking_horizon_end(t.horizon_business_days, t.max_days_ahead,\n      public.rout_booking_type_zone(t.id), now()) then return 'too_far'; end if;\n  return null;\nend $function$"
+    },
+    {
+      "schema": "public",
       "name": "rout_booking_type_public",
       "args": "p_id uuid",
       "def": "CREATE OR REPLACE FUNCTION public.rout_booking_type_public(p_id uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\n  select exists (\n    select 1 from public.booking_event_types t\n    left join public.profiles p on p.id = t.user_id\n    where t.id = p_id and t.is_active\n      and exists (select 1 from public.booking_event_type_hosts h where h.event_type_id = t.id)\n      and (t.user_id is null or (p.id is not null\n        and coalesce((p.display_prefs ->> 'publicProfile')::boolean, true)\n        and not coalesce(p.is_banned, false) and not coalesce(p.is_suspended, false))))\n$function$"
+    },
+    {
+      "schema": "public",
+      "name": "rout_booking_type_zone",
+      "args": "p_event_type uuid",
+      "def": "CREATE OR REPLACE FUNCTION public.rout_booking_type_zone(p_event_type uuid)\n RETURNS text\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\n  select public.rout_booking_zone(t.rules_timezone,\n    coalesce(t.user_id, (select h.user_id from public.booking_event_type_hosts h where h.event_type_id = t.id\n      order by h.priority desc, h.user_id limit 1)))\n  from public.booking_event_types t where t.id = p_event_type\n$function$"
+    },
+    {
+      "schema": "public",
+      "name": "rout_booking_within_limits",
+      "args": "p_event_type uuid, p_host uuid, p_start timestamp with time zone, p_hold uuid",
+      "def": "CREATE OR REPLACE FUNCTION public.rout_booking_within_limits(p_event_type uuid, p_host uuid, p_start timestamp with time zone, p_hold uuid)\n RETURNS boolean\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare\n  t public.booking_event_types%rowtype; zone text; wall timestamp; unit text; lim integer;\n  ps timestamptz; pe timestamptz; n integer;\nbegin\n  select * into t from public.booking_event_types where id = p_event_type;\n  if t.limit_per_day is null and t.limit_per_week is null and t.limit_per_month is null then return true; end if;\n  if greatest(1, t.resource_capacity) > 1 and exists (\n      select 1 from public.bookings b where b.host_user_id = p_host and b.event_type_id = t.id and b.shared_slot\n        and b.start_utc = p_start and b.status in ('held','pending_payment','requested','confirmed')) then\n    return true;\n  end if;\n  zone := public.rout_booking_zone(t.rules_timezone, p_host);\n  wall := p_start at time zone zone;\n  foreach unit in array array['day', 'week', 'month'] loop\n    lim := case unit when 'day' then t.limit_per_day when 'week' then t.limit_per_week else t.limit_per_month end;\n    continue when lim is null;\n    ps := date_trunc(unit, wall) at time zone zone;\n    pe := (date_trunc(unit, wall) + ('1 ' || unit)::interval) at time zone zone;\n    select count(*) into n from (\n      select case when b.shared_slot then 'S' || b.start_utc::text else b.id::text end\n      from public.bookings b where b.host_user_id = p_host and b.event_type_id = t.id\n        and b.status in ('held','pending_payment','requested','confirmed') and b.start_utc >= ps and b.start_utc < pe\n      union\n      select case when x.shared_slot then 'S' || x.start_utc::text else 'H' || x.hold_id::text end\n      from public.booking_holds x where x.host_user_id = p_host and x.event_type_id = t.id and x.expires_at > now()\n        and x.hold_id is distinct from p_hold and x.start_utc >= ps and x.start_utc < pe) keys;\n    if n >= lim then return false; end if;\n  end loop;\n  return true;\nend $function$"
+    },
+    {
+      "schema": "public",
+      "name": "rout_booking_zone",
+      "args": "p_zone text, p_host uuid",
+      "def": "CREATE OR REPLACE FUNCTION public.rout_booking_zone(p_zone text, p_host uuid)\n RETURNS text\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\n  select coalesce(\n    (select p_zone where p_zone is not null and exists (select 1 from pg_timezone_names z where z.name = p_zone)),\n    (select r.timezone from public.availability_rules r\n      where r.user_id = p_host and exists (select 1 from pg_timezone_names z where z.name = r.timezone)\n      order by r.weekday, r.start_minute, r.id limit 1),\n    'UTC')\n$function$"
     },
     {
       "schema": "public",

@@ -7,6 +7,16 @@ import { assertWorkspaceRole, resolveActiveWorkspace } from "@/lib/workspaces.se
 import { recomputeUser } from "./recompute.server";
 import type { EventTypeInput, AvailabilityRule } from "./types";
 import { intakeFields } from "./intake";
+import { effectiveMaxDaysAhead } from "./slot-rules";
+
+/** db/0218 columns exist (cached 60 s), so saves never reference missing columns before it is applied. */
+let phase2Probe: { ok: boolean; at: number } | null = null;
+async function hasPhase2(): Promise<boolean> {
+  if (phase2Probe && Date.now() - phase2Probe.at < 60_000) return phase2Probe.ok;
+  const rows = (await sql`select to_regclass('public.booking_holds') is not null as ok`) as { ok: boolean }[];
+  phase2Probe = { ok: Boolean(rows[0]?.ok), at: Date.now() };
+  return phase2Probe.ok;
+}
 
 /** Host-only view of intake answers: labels + values; sealed ones are opened server-side. */
 async function readIntake(b: Record<string, unknown>): Promise<{ label: string; value: string }[]> {
@@ -79,6 +89,8 @@ export async function overview(userId: string) {
   const s = (v: unknown) => (v == null ? null : String(v));
   return {
     workspaceId: canWs ? workspaceId : null,
+    /** Holds, limits and business-day windows are live (db/0218). */
+    phase2: await hasPhase2().catch(() => false),
     members,
     eventTypes: types.map((t) => ({
       id: String(t["id"]), workspaceId: s(t["workspace_id"]), slug: String(t["slug"]), title: String(t["title"]),
@@ -90,6 +102,14 @@ export async function overview(userId: string) {
       routingStrategy: String(t["routing_strategy"]) as "STRICT" | "ROUND_ROBIN" | "COLLECTIVE",
       locationKind: String(t["location_kind"]) as "video" | "address" | "phone", locationValue: s(t["location_value"]),
       resourceCapacity: Number(t["resource_capacity"] ?? 1),
+      limitPerDay: t["limit_per_day"] == null ? null : Number(t["limit_per_day"]),
+      limitPerWeek: t["limit_per_week"] == null ? null : Number(t["limit_per_week"]),
+      limitPerMonth: t["limit_per_month"] == null ? null : Number(t["limit_per_month"]),
+      limitPerGuest: t["limit_per_guest"] == null ? null : Number(t["limit_per_guest"]),
+      horizonBusinessDays: t["horizon_business_days"] == null ? null : Number(t["horizon_business_days"]),
+      adjacentOnly: Boolean(t["adjacent_only"]),
+      rulesTimezone: s(t["rules_timezone"]),
+      phase2: "adjacent_only" in t,
       customFields: intakeFields.safeParse(t["custom_fields"] ?? []).data ?? [],
       isActive: Boolean(t["is_active"]), hosts: (t["hosts"] as { userId: string; priority: number }[]) ?? [],
     })),
@@ -123,7 +143,8 @@ export async function saveEventType(userId: string, id: string | null, input: Ev
   }
   if (id) await assertCanManageEventType(userId, id);
   const etId = id ?? crypto.randomUUID();
-  const v = input;
+  const v = { ...input, maxDaysAhead: effectiveMaxDaysAhead(input.maxDaysAhead, input.horizonBusinessDays) };
+  const phase2 = await hasPhase2();
   const upsert = id
     ? sql`update public.booking_event_types set slug = ${v.slug}, title = ${v.title}, description = ${v.description},
         duration_minutes = ${v.durationMinutes}, buffer_before_minutes = ${v.bufferBeforeMinutes}, buffer_after_minutes = ${v.bufferAfterMinutes},
@@ -142,6 +163,11 @@ export async function saveEventType(userId: string, id: string | null, input: Ev
   try {
     await sql.transaction([
       upsert,
+      ...(phase2
+        ? [sql`update public.booking_event_types set limit_per_day = ${v.limitPerDay}, limit_per_week = ${v.limitPerWeek},
+            limit_per_month = ${v.limitPerMonth}, limit_per_guest = ${v.limitPerGuest}, horizon_business_days = ${v.horizonBusinessDays},
+            adjacent_only = ${v.adjacentOnly}, rules_timezone = ${v.rulesTimezone} where id = ${etId}::uuid`]
+        : []),
       sql`delete from public.booking_event_type_hosts where event_type_id = ${etId}::uuid`,
       sql`insert into public.booking_event_type_hosts (event_type_id, user_id, priority)
         select ${etId}::uuid, h.u, h.p from unnest(${v.hostUserIds}::uuid[], ${priorities}::int[]) as h(u, p)`,

@@ -50,6 +50,14 @@ export const eventTypeInput = z
     hostUserIds: z.array(z.string().uuid()).min(1).max(50),
     resourceCapacity: z.number().int().min(1).max(100).default(1),
     customFields: intakeFields.default([]),
+    // Phase 2 (db/0218). Limits count meetings per host in the type's calendar period.
+    limitPerDay: z.number().int().min(1).max(200).nullable().default(null),
+    limitPerWeek: z.number().int().min(1).max(1000).nullable().default(null),
+    limitPerMonth: z.number().int().min(1).max(5000).nullable().default(null),
+    limitPerGuest: z.number().int().min(1).max(50).nullable().default(null),
+    horizonBusinessDays: z.number().int().min(1).max(260).nullable().default(null),
+    adjacentOnly: z.boolean().default(false),
+    rulesTimezone: ianaZone.nullable().default(null),
   })
   .refine((v) => (v.ownerUserId === null) !== (v.workspaceId === null), { message: "exactly_one_owner" })
   .refine((v) => v.workspaceId !== null || v.routingStrategy === "STRICT", { message: "personal_types_are_strict" })
@@ -73,6 +81,10 @@ export interface EventTypeRules {
   title: string;
   locationKind: z.infer<typeof locationKind>;
   locationValue: string | null;
+  /** Gap-free mode (db/0218): only starts that touch a taken slot or the edge of working hours. */
+  adjacentOnly?: boolean;
+  /** Exclusive end of the bookable window from the database (business days or max days ahead). */
+  horizonEndUtc?: Date | null;
 }
 
 export const availabilityRule = z
@@ -98,12 +110,15 @@ export const bookingRequest = z.object({
   guestTimezone: ianaZone,
   guestNote: z.string().max(2000).nullable().default(null),
   intakeAnswers: z.record(z.string().max(32), z.union([z.string().max(2000), z.boolean()])).nullable().default(null),
+  /** Soft-lock from holdBookingSlot; without it (or expired) the regular rules apply. */
+  holdId: z.string().uuid().nullable().default(null),
+  holdSecret: z.string().regex(/^[a-f0-9]{64}$/).nullable().default(null),
 });
 export type BookingRequest = z.infer<typeof bookingRequest>;
 
 export type BookingOutcome =
   | { ok: true; bookingIds: string[]; bookingToken: string | null; status: z.infer<typeof bookingStatus>; hostUserIds: string[]; checkoutUrl: string | null }
-  | { ok: false; reason: "slot_taken" | "outside_availability" | "too_soon" | "too_far" | "inactive" | "payment_unavailable" | "invalid_intake" };
+  | { ok: false; reason: "slot_taken" | "outside_availability" | "too_soon" | "too_far" | "inactive" | "payment_unavailable" | "invalid_intake" | "guest_limit" };
 
 /** Zero-knowledge busy block: the ONLY shape a calendar adapter may emit. */
 export interface BusyBlock {

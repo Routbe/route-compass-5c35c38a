@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
-import { CalendarClock, Clock, Globe, Loader2, MapPin, Phone, Video } from "lucide-react";
+import { CalendarClock, Clock, Globe, Loader2, Lock, MapPin, Phone, Video } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useI18n } from "@/lib/i18n";
-import { createBooking, getPublicEventType, getPublicSlots } from "@/lib/booking-engine/booking.functions";
+import { createBooking, getPublicEventType, getPublicSlots, holdBookingSlot, releaseBookingSlot } from "@/lib/booking-engine/booking.functions";
+import { holdCountdown } from "@/lib/booking-engine/hold-rules";
 import { IntakeForm } from "@/components/booking/IntakeForm";
 import { validateIntake, type IntakeAnswers } from "@/lib/booking-engine/intake";
 import { offeredSelection } from "@/lib/booking-engine/selection";
@@ -26,12 +27,20 @@ export default function BookPublic({ eventTypeId, selectedStart }: { eventTypeId
   const getType = useServerFn(getPublicEventType);
   const getSlots = useServerFn(getPublicSlots);
   const book = useServerFn(createBooking);
+  const holdFn = useServerFn(holdBookingSlot);
+  const releaseFn = useServerFn(releaseBookingSlot);
   // Timezone is read after hydration so SSR and client render the same first frame.
   const [tz, setTz] = useState("UTC");
   useEffect(() => setTz(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"), []);
 
   const typeQ = useQuery({ queryKey: ["booking-type", eventTypeId], queryFn: () => getType({ data: { id: eventTypeId } }) });
-  const slotsQ = useQuery({ queryKey: ["booking-slots", eventTypeId], queryFn: () => getSlots({ data: { id: eventTypeId } }), staleTime: 30_000 });
+  // The visitor's own hold stays visible to them; read through a ref so holding never resets the list.
+  const holdRef = useRef<string | null>(null);
+  const slotsQ = useQuery({
+    queryKey: ["booking-slots", eventTypeId],
+    queryFn: () => getSlots({ data: { id: eventTypeId, holdId: holdRef.current } }),
+    staleTime: 30_000,
+  });
 
   const byDay = useMemo(() => {
     const m = new Map<string, string[]>();
@@ -50,13 +59,54 @@ export default function BookPublic({ eventTypeId, selectedStart }: { eventTypeId
   const [error, setError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<IntakeAnswers>({});
   const [selectionApplied, setSelectionApplied] = useState(false);
+  // Soft-lock (db/0218): a clicked slot is reserved for a few minutes while the form is filled in.
+  const [hold, setHold] = useState<{ holdId: string; secret: string; expiresAt: string; startUtc: string } | null>(null);
+  const [holding, setHolding] = useState(false);
+  const [clock, setClock] = useState(() => Date.now());
+  useEffect(() => { holdRef.current = hold?.holdId ?? null; }, [hold]);
+  useEffect(() => {
+    if (!hold) return;
+    setClock(Date.now());
+    const id = window.setInterval(() => setClock(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [hold]);
+  const countdown = hold ? holdCountdown(hold.expiresAt, clock) : null;
 
   useEffect(() => {
     if (selectionApplied || !slotsQ.data) return;
     const offered = offeredSelection(selectedStart, slotsQ.data.slots);
-    if (offered) { setDay(localDayKey(offered, tz)); setSlot(offered); }
+    if (offered) { setDay(localDayKey(offered, tz)); void pickSlot(offered); }
     setSelectionApplied(true);
+    // pickSlot only reads stable setters and the current hold.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedStart, slotsQ.data, tz, selectionApplied]);
+
+  const releaseHold = (h = hold) => {
+    if (!h) return;
+    setHold(null);
+    void releaseFn({ data: { holdId: h.holdId, secret: h.secret } }).catch(() => undefined);
+  };
+
+  /** Open the form for a start and reserve it; without soft-locks (or on a hiccup) the form still opens. */
+  async function pickSlot(start: string) {
+    setError(null);
+    setSlot(start);
+    const meta = typeQ.data;
+    if (meta && meta.holdMinutes == null) return;
+    setHolding(true);
+    const previous = hold;
+    const r = await holdFn({ data: { eventTypeId, startUtc: start, replace: previous ? { id: previous.holdId, secret: previous.secret } : null } })
+      .catch(() => ({ ok: false as const, reason: "unavailable" as const }));
+    setHolding(false);
+    if (r.ok) { setHold({ holdId: r.holdId, secret: r.secret, expiresAt: r.expiresAt, startUtc: r.startUtc }); return; }
+    setHold(null);
+    if (r.reason === "slot_taken" || r.reason === "too_soon" || r.reason === "too_far" || r.reason === "outside_availability") {
+      setSlot(null); setError(t("booking.public.slotTaken")); void slotsQ.refetch();
+    } else if (r.reason === "too_many_holds") { setSlot(null); setError(t("booking.public.tooManyHolds")); }
+    else if (r.reason === "rate_limited") { setSlot(null); setError(t("booking.public.rateLimited")); }
+    else if (r.reason === "inactive") { setSlot(null); setError(t("booking.public.notFound")); }
+    // "unavailable": book without a reservation; the database still refuses a taken slot.
+  }
 
   const et = typeQ.data;
   if (typeQ.isLoading) return <AppLayout><div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div></AppLayout>;
@@ -72,15 +122,19 @@ export default function BookPublic({ eventTypeId, selectedStart }: { eventTypeId
     if (!checked.ok) { setError(t("booking.err.invalid")); return; }
     setSending(true);
     setError(null);
-    const r = await book({ data: { eventTypeId, startUtc: slot, guestName: form.name, guestEmail: form.email, guestTimezone: tz, guestNote: form.note || null, intakeAnswers: checked.answers } })
+    const held = hold && hold.startUtc === slot ? hold : null;
+    const r = await book({ data: { eventTypeId, startUtc: slot, guestName: form.name, guestEmail: form.email, guestTimezone: tz, guestNote: form.note || null,
+      intakeAnswers: checked.answers, holdId: held?.holdId ?? null, holdSecret: held?.secret ?? null } })
       .catch(() => ({ ok: false as const, reason: "invalid" as const }));
     setSending(false);
     if (r.ok) {
+      setHold(null);
       if (r.checkoutUrl) { window.location.href = r.checkoutUrl; return; }
       void navigate({ to: "/booking/$bookingId", params: { bookingId: r.bookingId }, search: { paid: undefined, token: r.bookingToken ?? undefined } });
       return;
     }
-    if (r.reason === "slot_taken") { setError(t("booking.public.slotTaken")); setSlot(null); void slotsQ.refetch(); }
+    if (r.reason === "slot_taken") { setError(t("booking.public.slotTaken")); setHold(null); setSlot(null); void slotsQ.refetch(); }
+    else if (r.reason === "guest_limit") setError(t("booking.public.guestLimit"));
     else if (r.reason === "payment_unavailable") setError(t("booking.public.paymentUnavailable"));
     else if (r.reason === "rate_limited") setError(t("booking.public.rateLimited"));
     else if (r.reason === "invalid" || r.reason === "invalid_intake") setError(t("booking.err.invalid"));
@@ -125,7 +179,7 @@ export default function BookPublic({ eventTypeId, selectedStart }: { eventTypeId
               <h2 className="mb-3 text-sm font-semibold">{t("booking.public.pickTime")}</h2>
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {(byDay.get(activeDay) ?? []).map((s) => (
-                  <Button key={s} size="sm" variant={s === slot ? "default" : "soft"} onClick={() => setSlot(s)}>{timeLabel(s)}</Button>
+                  <Button key={s} size="sm" variant={s === slot ? "default" : "soft"} disabled={holding} onClick={() => void pickSlot(s)}>{timeLabel(s)}</Button>
                 ))}
               </div>
             </div>
@@ -133,7 +187,7 @@ export default function BookPublic({ eventTypeId, selectedStart }: { eventTypeId
         </section>
       </div>
 
-      <Dialog open={Boolean(slot)} onOpenChange={(o) => !o && setSlot(null)}>
+      <Dialog open={Boolean(slot)} onOpenChange={(o) => { if (!o) { releaseHold(); setSlot(null); } }}>
         <DialogContent className="max-h-[85dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t("booking.public.yourDetails")}</DialogTitle>
@@ -142,6 +196,22 @@ export default function BookPublic({ eventTypeId, selectedStart }: { eventTypeId
             <p className="text-sm text-muted-foreground">
               {et.title} · {new Intl.DateTimeFormat(locale, { dateStyle: "full", timeStyle: "short", timeZone: tz }).format(new Date(slot))}
             </p>
+          )}
+          {holding && (
+            <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />{t("booking.public.holding")}</p>
+          )}
+          {countdown && !countdown.expired && (
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm">
+              <Lock className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+              <span className="min-w-0">{t("booking.public.heldFor")}</span>
+              <span role="timer" aria-label={t("booking.public.heldFor")} className="ml-auto font-mono tabular-nums font-semibold">{countdown.label}</span>
+            </div>
+          )}
+          {countdown?.expired && (
+            <div role="alert" className="space-y-2 rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm">
+              <p>{t("booking.public.holdExpired")}</p>
+              <Button type="button" size="sm" variant="soft" disabled={holding} onClick={() => slot && void pickSlot(slot)}>{t("booking.public.holdAgain")}</Button>
+            </div>
           )}
           <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); void submit(); }}>
             <div className="space-y-1.5"><Label htmlFor="bk-name">{t("booking.public.name")}</Label><Input id="bk-name" required maxLength={120} autoComplete="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
