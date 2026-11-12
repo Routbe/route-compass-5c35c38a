@@ -5,6 +5,7 @@ import { ExternalLink, Share2 } from "lucide-react";
 import { InfoHint } from "@/components/InfoHint";
 import { Button } from "@/components/ui/button";
 import { SocialPreview } from "@/components/dashboard/SocialPreview";
+import { ShareImageFormats } from "@/components/studio/ShareImageFormats";
 import { suggestMetaDescription, suggestMetaTitle, suggestOgImage } from "@/lib/share-suggestions";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -158,6 +159,8 @@ export function SocialSharingCard({
           accent={prefs.accentColor}
         />
       </div>
+
+      {clean && <ShareImageFormats handle={clean} space={space} isPublic={prefs.publicProfile} />}
 
       <div className="space-y-2">
         <span className="input-label flex items-center gap-1">

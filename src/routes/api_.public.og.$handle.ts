@@ -7,6 +7,7 @@ import { fontPairingOf } from "@/lib/profile-design";
 import { ogHeadingFont } from "@/lib/og-fonts";
 import { parseShareCardKind, parseShareCardLang, shareCardSvg } from "@/lib/og-action-card";
 import { sanitizeHandleInput } from "@/lib/validations/sanitizeHandle";
+import { OG_FORMATS, parseOgFormat } from "@/lib/og-formats";
 
 /**
  * Dynamische OpenGraph-kaart (1200×630) voor profielen zonder eigen
@@ -16,6 +17,8 @@ import { sanitizeHandleInput } from "@/lib/validations/sanitizeHandle";
  * `/api/public/og/<handle>.png` levert een PNG (Discord, WhatsApp, Slack,
  * iMessage en LinkedIn tonen geen SVG-kaarten). `<handle>.svg` blijft
  * beschikbaar voor debug en voor crawlers die vector wél aankunnen.
+ * `?format=square|portrait|story` levert dezelfde kaart in 1080×1080,
+ * 1080×1350 of 1080×1920 (zonder parameter: de 1200×630 linkpreview).
  */
 export const Route = createFileRoute("/api_/public/og/$handle")({
   server: {
@@ -99,11 +102,12 @@ export const Route = createFileRoute("/api_/public/og/$handle")({
         // Action links (ask/donate/tip/booking) get their own NGL-style invitation card.
         const kind = space === "workspace" ? null : parseShareCardKind(search.get("card"));
         const lang = parseShareCardLang(search.get("lang"));
+        const format = parseOgFormat(search.get("format"));
         const base = space === "alias" ? `rout.be/u/${handle}` : `rout.be/${handle}`;
         const build = () =>
           kind
-            ? shareCardSvg({ kind, lang, handle, name, avatarUrl: inlineAvatar, urlLabel: `${base}/${kind}` })
-            : ogSvg({ handle, name, tagline, accent, ...design, bg: String(design.bg), avatarUrl: inlineAvatar, ...(urlLabel ? { urlLabel } : {}) });
+            ? shareCardSvg({ kind, lang, handle, name, avatarUrl: inlineAvatar, urlLabel: `${base}/${kind}`, format })
+            : ogSvg({ handle, name, tagline, accent, ...design, bg: String(design.bg), avatarUrl: inlineAvatar, ...(urlLabel ? { urlLabel } : {}) }, format);
 
         if (!wantsSvg) {
           try {
@@ -112,7 +116,7 @@ export const Route = createFileRoute("/api_/public/og/$handle")({
             // resvg haalt zelf geen externe afbeeldingen op: de avatar moet
             // als data-URI in de vector zitten voor we rasteriseren.
             const svg = build();
-            const png = await cachedOgPng(svg, async () => new Uint8Array(await svgToPng(svg, origin, String(design.bg))));
+            const png = await cachedOgPng(svg, async () => new Uint8Array(await svgToPng(svg, origin, String(design.bg), OG_FORMATS[format].width)));
             return new Response(png as unknown as BodyInit, {
               headers: { "content-type": "image/png", "cache-control": cache },
             });

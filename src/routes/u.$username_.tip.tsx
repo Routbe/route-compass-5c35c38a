@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import Donate from "@/components/imported-pages/TipPage";
 import { canonicalLinks, donateJsonLd } from "@/lib/social-meta";
 import { sanitizeHandleInput } from "@/lib/validations/sanitizeHandle";
+import { shareCardMeta } from "@/lib/og-action-card";
 
 /** Fooi-variant van de steunpagina: `rout.be/u/[alias]/tip`. */
 export const Route = createFileRoute("/u/$username_/tip")({
@@ -23,7 +24,7 @@ export const Route = createFileRoute("/u/$username_/tip")({
         { property: "og:title", content: title },
         { property: "og:description", content: description },
         { property: "og:type", content: "profile" },
-        { name: "twitter:card", content: "summary" },
+        ...shareCardMeta(handle, "tip", "nl", "alias"),
       ],
     };
   },
