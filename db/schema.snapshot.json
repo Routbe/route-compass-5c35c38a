@@ -6397,14 +6397,14 @@
       "forceRls": false,
       "policies": [
         {
-          "name": "rout_server",
+          "name": "rout_scope",
           "permissive": true,
           "roles": [
-            "rout_app"
+            "public"
           ],
           "cmd": "ALL",
-          "using": "true",
-          "check": "true"
+          "using": "(EXISTS ( SELECT 1\n   FROM connected_calendars c\n  WHERE ((c.id = calendar_events.calendar_id) AND (c.user_id = rout_current_user_id()))))",
+          "check": "(EXISTS ( SELECT 1\n   FROM connected_calendars c\n  WHERE ((c.id = calendar_events.calendar_id) AND (c.user_id = rout_current_user_id()))))"
         }
       ],
       "grants": {
@@ -27689,6 +27689,12 @@
       "name": "rout_booking_public_event_type",
       "args": "p_id uuid",
       "def": "CREATE OR REPLACE FUNCTION public.rout_booking_public_event_type(p_id uuid)\n RETURNS jsonb\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\n  select case when public.rout_booking_type_public(p_id) then (\n    select jsonb_build_object(\n      'id', t.id, 'title', t.title, 'description', t.description, 'durationMinutes', t.duration_minutes,\n      'priceCents', t.price_cents, 'currency', t.currency, 'locationKind', t.location_kind,\n      'confirmationMode', t.confirmation_mode, 'routingStrategy', t.routing_strategy,\n      'minimumNoticeHours', t.minimum_notice_hours, 'maxDaysAhead', t.max_days_ahead,\n      'slotStepMinutes', t.slot_step_minutes, 'bufferBeforeMinutes', t.buffer_before_minutes,\n      'bufferAfterMinutes', t.buffer_after_minutes, 'workspaceId', t.workspace_id,\n      'customFields', t.custom_fields, 'capacity', t.resource_capacity,\n      'hostName', coalesce(w.name, p.display_name),\n      'hostCount', (select count(*) from public.booking_event_type_hosts h where h.event_type_id = t.id),\n      'adjacentOnly', t.adjacent_only, 'horizonBusinessDays', t.horizon_business_days,\n      'horizonEndUtc', public.rout_booking_horizon_end(t.horizon_business_days, t.max_days_ahead,\n        public.rout_booking_type_zone(t.id), now()),\n      'holdMinutes', 5, 'phase', 2)\n    from public.booking_event_types t\n    left join public.workspaces w on w.id = t.workspace_id\n    left join public.profiles p on p.id = t.user_id\n    where t.id = p_id) end\n$function$"
+    },
+    {
+      "schema": "public",
+      "name": "rout_booking_public_sessions",
+      "args": "p_id uuid, p_from timestamp with time zone, p_to timestamp with time zone, p_hold uuid",
+      "def": "CREATE OR REPLACE FUNCTION public.rout_booking_public_sessions(p_id uuid, p_from timestamp with time zone, p_to timestamp with time zone, p_hold uuid)\n RETURNS TABLE(host_ordinal integer, start_utc timestamp with time zone, block_start_utc timestamp with time zone, block_end_utc timestamp with time zone, open boolean)\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare cap integer;\nbegin\n  if not public.rout_booking_type_public(p_id) then return; end if;\n  select greatest(1, t.resource_capacity) into cap from public.booking_event_types t where t.id = p_id;\n  if p_to > p_from + interval '400 days' then p_to := p_from + interval '400 days'; end if;\n  return query\n    with hosts as (\n      select h.user_id, row_number() over (order by h.user_id)::integer as ord\n      from public.booking_event_type_hosts h where h.event_type_id = p_id\n    ), seats as (\n      select b.host_user_id as host, b.event_type_id as et, b.start_utc as s, b.block_start_utc as bs, b.block_end_utc as be\n      from public.bookings b join hosts on hosts.user_id = b.host_user_id\n      where b.shared_slot and b.status in ('held','pending_payment','requested','confirmed')\n        and b.block_end_utc > p_from and b.block_start_utc < p_to\n      union all\n      select x.host_user_id, x.event_type_id, x.start_utc, x.block_start_utc, x.block_end_utc\n      from public.booking_holds x join hosts on hosts.user_id = x.host_user_id\n      where x.shared_slot and x.expires_at > now() and x.hold_id is distinct from p_hold\n        and x.block_end_utc > p_from and x.block_start_utc < p_to\n    )\n    select hosts.ord, g.s, min(g.bs), max(g.be), (g.et = p_id and cap > 1 and count(*) < cap)\n    from seats g join hosts on hosts.user_id = g.host\n    group by hosts.ord, g.host, g.et, g.s;\nend $function$"
     },
     {
       "schema": "public",

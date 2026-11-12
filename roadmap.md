@@ -69,7 +69,7 @@
 - [x] Fase 1 (code): veilige publieke databasefuncties (db/0216), boeken controleert werkuren, locks over middernacht, groepsacties, per-host slots, DST-correct, volledige herhaalregels (rrule), cache volgt boekingsvenster
 - [x] Fase 1 (live): db/0216 + 0217 op Neon, snapshot vernieuwd, publieke boekingspagina getest
 - [x] Fase 2 (code + tests): soft-lock 5 min + aftelklok, limieten dag/week/maand + per gast, werkdagenvenster, aansluitende slots (db/0218)
-- [ ] Fase 2 (live): db/0218 op Neon zetten — wacht op akkoord eigenaar; daarna aftelklok in de preview nakijken
+- [x] Fase 2 (live): db/0218 op Neon (akkoord 12-11), aftelklok getest; db/0219 groepsplaatsen in de lijst, db/0220 agenda-items per eigenaar
 - [ ] Fase 3: Google / Microsoft / CalDAV tweeweg (wacht op Google- en Microsoft-sleutels)
 - [ ] Fase 4: gewogen round-robin, routing-formulier, Meet/Teams/Jitsi, locaties
 - [ ] Fase 5: betalen + annuleringsbeleid + gastportaal met ondertekende links + e-mails NL/EN/FR/DE
@@ -98,19 +98,25 @@
 - [x] Live-blokken Steam/Last.fm/muziek: verdwijnen als gegevens verouderd zijn
 - [x] ROUT-kaart: privégegevens bekijken max 2 minuten per bevestiging (was 5)
 - [x] Docs-pagina's: "Zo werkt het", "Veelgestelde vragen", "Verder met ROUT" vertalen
-- [ ] Boekingen fase 2: code klaar en getest; db/0218 op live Neon wacht op akkoord
+- [x] Boekingen fase 2: live op Neon en getest met meerdere bezoekers
 - [ ] Herstelkluis v2 (Argon2id, wachttijd, Merkle): wacht op 4 keuzes van eigenaar (docs/security/recovery-vault-design.md §7)
 
 ## Nieuwe vraag (12-11): deelafbeeldingen in meerdere formaten
 - [x] Profiel- en uitnodigingskaarten (anoniem bericht, steun, fooi, afspraak) in 4 formaten: linkvoorbeeld 1200×630, vierkant 1080×1080, staand 1080×1350, story 1080×1920 (binnen de veilige zones)
 - [x] Studio: paneel om elk formaat te bekijken en te downloaden (NL/EN/FR/DE), in "Delen" en "Social Sharing & SEO"
 - [x] Ontbrekende deelafbeeldingen: alias-steun, alias-fooi, alias-feedback en workspace-feedback
-- [ ] Alias-agenda: deelafbeelding pas toevoegen na nagaan of /u/<naam>/agenda altijd een alias is
+- [x] /u/<naam>/agenda: volgt de hoofdgebruikersnaam (niet de alias) → krijgt de afspraak-deelafbeelding van het hoofdprofiel
 
 
 ## Nieuwe vraag (12-11): boekingsopdracht opnieuw gestuurd
 - [x] Fase 0-audit herhaald (boekingen, achtergrondwerk, betalingen, MCP, wallet) — plan van 11-11 blijft geldig
 - [x] Fase 2 gebouwd: db/0218 + 27 databasetests + regeltests, gastscherm met aftelklok, planningsregels in Boekingen-studio, NL/EN/FR/DE
-- [ ] db/0218 op Neon — wacht op akkoord
-- [ ] Bevinding audit: `calendar_events` heeft op live een open leesregel voor rout_app (alleen tijden/hashes, geen titels) — dichtzetten in fase 3
-- [ ] Bevinding audit: cron-routes availability/deliver-webhooks gebruiken nog eigen geheimvergelijking i.p.v. `cronGuard`
+- [x] db/0218 op Neon (+ 0219, 0220)
+- [x] Bevinding audit: `calendar_events` alleen nog voor de eigenaar (db/0220, live)
+- [x] Bevinding audit: alle 12 cron-routes nu via `cronGuard` (+ test die dit bewaakt)
+
+## Nieuwe vraag (12-11, 10:14): "werk alles verder af"
+- [x] 0218, 0219, 0220 live na akkoord; drie-bezoekerstest geslaagd
+- [ ] Fase 4–7 boekingen: grote nieuwe onderdelen, elk eerst eigen plan + databaseakkoord
+- [ ] Fase 3: wacht op Google- en Microsoft-sleutels
+- [ ] Bevinding: vergelijking database ↔ vastgelegde beschrijving toont 48 oudere verschillen (o.a. brede `rout_server`-regels uit 0154 op ~60 tabellen) — los nakijken
