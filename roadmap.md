@@ -74,8 +74,10 @@
 - [ ] Fase 4: gewogen round-robin, routing-formulier, Meet/Teams/Jitsi, locaties
 - [ ] Fase 5: betalen + annuleringsbeleid + gastportaal met ondertekende links + e-mails NL/EN/FR/DE
 - [ ] Fase 6: E2E-intake, Boek met ROUT, afspraakpas in wallet, agenda-overlay
-- [ ] Fase 7: UI (prefetch, 12/24u, tijdzone), weekplanner, MCP-tools, /discover/bookings
-- [ ] Eigen Ontdek-pagina voor afspraken (/discover/bookings) — onderdeel van het plan
+- [ ] Fase 7: UI (prefetch, 12/24u, tijdzone) en /discover/bookings klaar; nog weekplanner en MCP-tools
+- [ ] Bevinding: betaalde afspraken lopen nu via ROUTs eigen Stripe-account (geld komt niet bij de host) — keuze eigenaar nodig
+- [ ] Bevinding: gastgegevens van voorbije afspraken worden nooit opgeruimd — bewaartermijn kiezen + databaseakkoord
+- [x] Eigen Ontdek-pagina voor afspraken (/discover/bookings), menu-link, deelafbeelding, sitemap; uitlegpagina afspraken herschreven (was verouderd)
 
 ## Nieuwe vraag (11-11, 18:47): wallet, deelafbeeldingen, voorbeelden
 - [x] ROUT-kaart naar Google Wallet: oorzaak gevonden (kaartsleutel WALLET_ID_SECRET ontbreekt/te kort op de server); scherm toont nu de echte reden
