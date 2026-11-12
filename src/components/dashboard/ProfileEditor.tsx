@@ -690,6 +690,22 @@ export function ProfileEditor({ variant = "verified", pageMode = "profile", onPa
   const [localSavedRev, setLocalSavedRev] = useState(0);
   const [localOffer, setLocalOffer] = useState<{ savedAt: number; value: typeof historySnapshot } | null>(null);
   const localChecked = useRef<string | null>(null);
+  // Local writes run one after another, so an older revision can never overwrite a newer one,
+  // and every server save awaits the committed local copy of the revision it sends.
+  const localWrites = useRef<Promise<boolean>>(Promise.resolve(true));
+  const persistLocal = (rev: number, value: typeof historySnapshot): Promise<boolean> => {
+    if (!draftKey) return Promise.resolve(false);
+    const key = draftKey;
+    const fingerprint = draftFingerprint(value);
+    const write = localWrites.current
+      .then(() => putStudioDraft(key, value, fingerprint), () => putStudioDraft(key, value, fingerprint))
+      .catch(() => false);
+    localWrites.current = write;
+    return write.then((ok) => {
+      if (ok) setLocalSavedRev((r) => Math.max(r, rev));
+      return ok;
+    });
+  };
   useEffect(() => {
     if (loading || !draftKey || localChecked.current === draftKey) return;
     localChecked.current = draftKey;
@@ -706,9 +722,7 @@ export function ProfileEditor({ variant = "verified", pageMode = "profile", onPa
     const rev = editRev.current;
     const value = historySnapshot;
     const id = setTimeout(() => {
-      void putStudioDraft(draftKey, value, draftFingerprint(value)).then((ok) => {
-        if (ok) setLocalSavedRev((r) => Math.max(r, rev));
-      });
+      void persistLocal(rev, value);
     }, 250);
     return () => clearTimeout(id);
   }, [historySnapshot, dirty, loading, draftKey, localOffer]);
@@ -755,11 +769,14 @@ export function ProfileEditor({ variant = "verified", pageMode = "profile", onPa
     setSaving(true);
     try {
     const rev = editRev.current;
+    const localValue = historySnapshot;
     const next = currentSnapshot();
     const patches = diffStudioSnapshot(savedSnapshot.current, next);
     type PatchResult = Awaited<ReturnType<typeof saveMeta>>;
     let results: PatchResult[];
     try {
+      // Device copy first: only when this write has committed may the server call start.
+      if (!localOffer) await persistLocal(rev, localValue);
       const calls: Promise<PatchResult>[] = [];
       if (patches.meta) calls.push(saveMeta({ data: { ...canvas, ...patches.meta } }));
       if (patches.theme) calls.push(saveTheme({ data: { ...canvas, ...patches.theme } as never }));
