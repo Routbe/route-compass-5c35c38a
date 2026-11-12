@@ -2,8 +2,13 @@ import { createFileRoute, notFound } from "@tanstack/react-router";
 import { getNextBookingSlots } from "@/lib/booking-engine/booking.functions";
 import { canonicalLinks, jsonLdScript } from "@/lib/social-meta";
 import BookPublic from "@/components/imported-pages/BookPublic";
+import { shareCardMeta } from "@/lib/og-action-card";
 
-/** Linked calendar: the public agenda tied to a member's identity. */
+/**
+ * Linked calendar: the public agenda tied to a member's identity. The handle is
+ * resolved against the root username (rout_booking_public_type_for_handle), so
+ * the share card is the root booking card, the same as /<handle>/booking.
+ */
 export const Route = createFileRoute("/u/$username_/agenda")({
   loader: async ({ params }) => {
     const event = await getNextBookingSlots({ data: { handle: params.username.replace(/^@/, ""), eventTypeId: null } });
@@ -17,7 +22,7 @@ export const Route = createFileRoute("/u/$username_/agenda")({
       { property: "og:title", content: loaderData ? `Agenda van @${loaderData.handle}` : "Agenda" },
       { property: "og:description", content: "Bekijk beschikbare tijden en boek een afspraak via ROUT." },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
+      ...(loaderData ? shareCardMeta(loaderData.handle.replace(/^@/, ""), "booking", "nl", "root") : [{ name: "twitter:card", content: "summary" }]),
     ],
     links: loaderData ? canonicalLinks(`/u/${loaderData.handle.replace(/^@/, "")}/agenda`) : [],
     scripts: loaderData
