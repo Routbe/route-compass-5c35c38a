@@ -1,0 +1,8 @@
+## Booking engine rules
+- Guests, Stripe and cron reach bookings only through the db/0216 `rout_booking_*` SECURITY DEFINER entry points; never widen rout_app RLS or query booking tables without a session. Why: anonymous code must not see any host's rows, and every check lives where the write happens.
+- `rout_booking_create` is the only way to insert a booking: it derives status/hold from the event type, validates grid/notice/horizon/cached availability over the whole block, and locks every (host, UTC day) the block touches in global order. Why: no caller can book outside working hours, and cross-midnight or shared-seat races serialize.
+- Per-user background work (recompute, calendar sync, guest mails) runs inside `withDbContext({ userId: host })`. Why: cron acts as the owner through RLS instead of around it.
+- Team slots are computed per host and only then combined (`slot-rules.ts`); collective = every host, otherwise any single host. Why: partial free time of different hosts is never stitched into one slot.
+- Collective bookings change as one group (paid, release, confirm, decline, cancel). Why: one guest booking must never end half-confirmed.
+- Wall time → UTC follows RFC 5545 (gap moves forward, ambiguous takes the first); external recurrences expand on the event's own wall clock via `rrule`. Why: weekly meetings must not drift an hour across DST.
+- External calendar URLs pass `assertCalendarUrl` (https/443, no userinfo, public DNS via the shared SSRF guard, no redirects) both before they are stored and before every sync. Why: a member must never make the server reach an internal address.
