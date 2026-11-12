@@ -304,12 +304,12 @@
 .dv-cal-times { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 14px; }
 .dv-cal-times span { height: 22px; border-radius: 7px; border: 1px solid oklch(1 0 0 / 0.12); }
 .dv-cal-times span[data-held="true"] { border-color: var(--tp); background: color-mix(in oklab, var(--tp) 16%, transparent); }
-.dv-hold { bottom: 22px; left: 50%; translate: -50% 0; gap: 10px; padding: 8px 14px 8px 10px; }
-.dv-hold svg.dv-ring { flex: none; width: 24px; height: 24px; rotate: -90deg; }
-.dv-ring circle { fill: none; stroke-width: 3; }
-.dv-ring .dv-ring-track { stroke: oklch(1 0 0 / 0.12); }
-.dv-ring .dv-ring-left { stroke: var(--tp); stroke-linecap: round; stroke-dasharray: 75.4; animation: dv-ring 12s linear infinite; }
-@keyframes dv-ring { from { stroke-dashoffset: 0; } to { stroke-dashoffset: 75.4; } }
+.dv-hold { bottom: 6px; left: 50%; translate: -50% 0; gap: 10px; padding: 8px 14px 8px 10px; }
+.dv-hold-ring { flex: none; width: 24px; height: 24px; rotate: -90deg; }
+.dv-hold-ring circle { fill: none; stroke-width: 3; }
+.dv-hold-track { stroke: oklch(1 0 0 / 0.12); }
+.dv-hold-left { stroke: var(--tp); stroke-linecap: round; stroke-dasharray: 75.4; animation: dv-hold-ring 12s linear infinite; }
+@keyframes dv-hold-ring { from { stroke-dashoffset: 0; } to { stroke-dashoffset: 75.4; } }
 
 @media (prefers-reduced-motion: reduce) {
   .dsc *, .dsc *::before, .dsc *::after, .dv-stage *, .dv-stage *::before { animation: none !important; transition: none !important; }
