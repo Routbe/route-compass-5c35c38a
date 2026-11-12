@@ -28,19 +28,19 @@ describe("ROUT card lifecycle", () => {
     expect(generationLabel(3)).toBe(":g3");
     expect(() => generationLabel(-1)).toThrow();
   });
-  it("the unlock window lasts 5 minutes and belongs to one member and one card", () => {
-    expect(CARD_UNLOCK_TTL_S).toBe(300);
-    const p = cardUnlockPayload("u1", 1000, 1300, "0123456789abcdef");
-    expect(checkCardUnlockPayload(p, "u1", 1000)).toEqual({ issuedAtSec: 1000, expiresAtSec: 1300, cardTag: "0123456789abcdef" });
+  it("the unlock window lasts 2 minutes and belongs to one member and one card", () => {
+    expect(CARD_UNLOCK_TTL_S).toBe(120);
+    const p = cardUnlockPayload("u1", 1000, 1120, "0123456789abcdef");
+    expect(checkCardUnlockPayload(p, "u1", 1000)).toEqual({ issuedAtSec: 1000, expiresAtSec: 1120, cardTag: "0123456789abcdef" });
     expect(checkCardUnlockPayload(p, "u2", 1000)).toBeNull();
-    expect(checkCardUnlockPayload(p, "u1", 1300)).toBeNull();
-    // Longer than 5 minutes is never accepted, even when signed.
-    expect(checkCardUnlockPayload(cardUnlockPayload("u1", 1000, 1301, "0123456789abcdef"), "u1", 1000)).toBeNull();
+    expect(checkCardUnlockPayload(p, "u1", 1120)).toBeNull();
+    // Longer than 2 minutes is never accepted, even when signed.
+    expect(checkCardUnlockPayload(cardUnlockPayload("u1", 1000, 1121, "0123456789abcdef"), "u1", 1000)).toBeNull();
     expect(checkCardUnlockPayload(cardUnlockPayload("u1", 1000, 1200, "not-a-tag"), "u1", 1000)).toBeNull();
   });
-  it("the window ends 5 minutes after the verification itself, not after the click", () => {
-    expect(cardUnlockExpiry(1000, 1000)).toBe(1300);
-    expect(cardUnlockExpiry(1000, 1100)).toBe(1300);
+  it("the window ends 2 minutes after the verification itself, not after the click", () => {
+    expect(cardUnlockExpiry(1000, 1000)).toBe(1120);
+    expect(cardUnlockExpiry(1000, 1100)).toBe(1120);
     expect(cardUnlockExpiry(1000, 1300)).toBeNull();
   });
 });
