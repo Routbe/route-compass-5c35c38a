@@ -145,7 +145,7 @@ export default function Studio({ initialGrid = false }: { initialGrid?: boolean 
           <div data-tour="studio-pages" role="tablist" aria-label={t("studio.mode.pages")} className="spatial-profile-tabs !mt-0 grid grid-cols-2 gap-1 rounded-lg p-1">
             {tabs.map(({ id, label, hint, Icon, locked }) => {
               const selected = variant === id;
-              const select = () => { setVariant(id); setPageMode("profile"); };
+              const select = () => { chooseVariant(id); setPageMode("profile"); };
               const trigger = <Button variant="ghost" type="button" role="tab" aria-selected={selected} aria-pressed={selected} onClick={select} className={`min-h-12 h-auto min-w-0 flex-1 md:min-h-14 justify-start gap-2 whitespace-normal rounded-lg px-3 py-2 text-left shadow-none ${selected ? "text-foreground" : "bg-transparent text-muted-foreground hover:text-foreground"}`}>
                 <Icon className="size-4 shrink-0" />
                 <span className="min-w-0 flex-1"><span className="block text-sm font-medium">{label}</span><span className="hidden break-all font-mono text-xs opacity-70 md:block">{selected ? tabUrl(id) ?? hint : hint}</span></span>
