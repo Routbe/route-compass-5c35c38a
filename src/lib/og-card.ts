@@ -201,10 +201,10 @@ export function ogSvg(input: OgCardInput, format: OgFormat = "landscape") {
 
 
 /** Vertical rhythm per tall format: avatar, name, link, tagline and logo, centred. */
-const TALL_LAYOUT: Record<Exclude<OgFormat, "landscape">, { r: number; cy: number; gap: number; name: number; url: number; tag: number; lines: number; logoY: number }> = {
-  square: { r: 150, cy: 300, gap: 120, name: 76, url: 36, tag: 34, lines: 2, logoY: 960 },
-  portrait: { r: 180, cy: 380, gap: 140, name: 80, url: 38, tag: 36, lines: 3, logoY: 1210 },
-  story: { r: 210, cy: 660, gap: 160, name: 88, url: 40, tag: 38, lines: 3, logoY: 1500 },
+const TALL_LAYOUT: Record<Exclude<OgFormat, "landscape">, { r: number; gap: number; name: number; url: number; tag: number; lines: number; logoY: number }> = {
+  square: { r: 150, gap: 120, name: 76, url: 36, tag: 34, lines: 2, logoY: 980 },
+  portrait: { r: 180, gap: 140, name: 80, url: 38, tag: 36, lines: 3, logoY: 1240 },
+  story: { r: 230, gap: 160, name: 92, url: 42, tag: 40, lines: 3, logoY: 1520 },
 };
 
 /**
@@ -213,7 +213,7 @@ const TALL_LAYOUT: Record<Exclude<OgFormat, "landscape">, { r: number; cy: numbe
  * the centre so nothing important sits under a platform overlay or crop.
  */
 function ogSvgTall(input: OgCardInput, format: Exclude<OgFormat, "landscape">) {
-  const { width: W, height: H } = OG_FORMATS[format];
+  const { width: W, height: H, safeTop } = OG_FORMATS[format];
   const L = TALL_LAYOUT[format];
   const bg = input.bg;
   const dark = luminance(bg) < 0.4;
@@ -225,7 +225,7 @@ function ogSvgTall(input: OgCardInput, format: Exclude<OgFormat, "landscape">) {
   const badge: OgBadge =
     input.badge !== undefined ? input.badge : input.verified ? "verified" : input.alias ? "human" : null;
   const cx = W / 2;
-  const { r, cy } = L;
+  const { r } = L;
 
   const name = input.name.slice(0, 26);
   // Shrink the name until name + badge fit inside the side margins.
@@ -236,10 +236,17 @@ function ogSvgTall(input: OgCardInput, format: Exclude<OgFormat, "landscape">) {
   const badgeSize = Math.round(nameSize * 0.72);
   const nameW = textWidth(name, nameSize, font);
   const nameX = cx - badgeRoom(nameSize) / 2;
+  const lines = wrap(input.tagline, Math.floor(maxW / (L.tag * 0.53)), L.lines);
+  // Centre the whole block (avatar to last tagline line) between the safe top and the logo.
+  const urlStep = Math.round(L.url * 1.75);
+  const tagFirst = Math.round(L.tag * 2);
+  const tagStep = Math.round(L.tag * 1.4);
+  const blockH = 2 * r + 10 + L.gap + urlStep + (lines.length ? tagFirst + (lines.length - 1) * tagStep : 0) + 12;
+  const areaBottom = L.logoY - 90;
+  const cy = Math.round(safeTop + Math.max(0, areaBottom - safeTop - blockH) / 2 + r + 10);
   const nameY = cy + r + L.gap;
   const badgeX = nameX + nameW / 2 + 14;
-  const urlY = nameY + Math.round(L.url * 1.75);
-  const lines = wrap(input.tagline, Math.floor(maxW / (L.tag * 0.53)), L.lines);
+  const urlY = nameY + urlStep;
   const urlLabel = input.urlLabel ?? `rout.be/${input.handle}`;
 
   const ringClip = avatarClip(shape, cx, cy, r + 10);
@@ -278,7 +285,7 @@ function ogSvgTall(input: OgCardInput, format: Exclude<OgFormat, "landscape">) {
   ${lines
     .map(
       (line, i) =>
-        `<text x="${cx}" y="${urlY + Math.round(L.tag * 2) + i * Math.round(L.tag * 1.4)}" text-anchor="middle" font-family="Inter" font-size="${L.tag}" fill="${escapeXml(muted)}">${escapeXml(line)}</text>`,
+        `<text x="${cx}" y="${urlY + tagFirst + i * tagStep}" text-anchor="middle" font-family="Inter" font-size="${L.tag}" fill="${escapeXml(muted)}">${escapeXml(line)}</text>`,
     )
     .join("")}
   <text x="${cx - logoTotal / 2}" y="${L.logoY}" font-family="Inter" font-size="${logoText}" font-weight="600" fill="${escapeXml(text)}" letter-spacing="-0.5">ROUT</text>
