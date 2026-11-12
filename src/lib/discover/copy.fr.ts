@@ -273,12 +273,12 @@ export const copyFr: DiscoverCopy = {
       ],
       faq: [
         { q: "Les visiteurs ont-ils besoin d'un compte ?", a: "Non. Ils choisissent un moment, indiquent leur nom et leur adresse e-mail et reçoivent une invitation pour leur agenda." },
-        { q: "Et si deux personnes choisissent la même heure en même temps ?", a: "La première garde ce créneau pendant 5 minutes. L'autre ne le voit plus ou reçoit aussitôt une autre proposition." },
+        { q: "Et si deux personnes choisissent la même heure en même temps ?", a: "La première garde ce créneau pendant 5 minutes. L'autre ne le voit plus et choisit un autre moment." },
         { q: "ROUT voit-il le contenu de mon agenda ?", a: "Non. Seuls le début et la fin des moments occupés servent à calculer votre temps libre." },
         { q: "Puis-je d'abord approuver les demandes ?", a: "Oui. Réglez la confirmation sur « demande » et vous acceptez ou refusez vous-même chaque réservation." },
       ],
       final: { title: "Moins d'e-mails dans tous les sens.", text: "Créez votre premier type de rendez-vous dans votre agenda." },
-      docs: ["Rendez-vous", "Pages de paiement", "Profils"],
+      docs: ["Rendez-vous", "Profils", "Workspaces pour agences"],
     },
   },
 };

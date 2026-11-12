@@ -273,12 +273,12 @@ export const copyEn: DiscoverCopy = {
       ],
       faq: [
         { q: "Do visitors need an account?", a: "No. They pick a time, enter their name and email address and receive an invitation for their calendar." },
-        { q: "What if two people pick the same time at once?", a: "Whoever picks first holds that time for 5 minutes. The other no longer sees it or is offered another time right away." },
+        { q: "What if two people pick the same time at once?", a: "Whoever picks first holds that time for 5 minutes. The other no longer sees it and picks another time." },
         { q: "Can ROUT see what is in my calendar?", a: "No. Only the start and end of busy moments are used to work out your free time." },
         { q: "Can I approve requests first?", a: "Yes. Set confirmation to 'request' and you accept or decline every booking yourself." },
       ],
       final: { title: "Fewer emails back and forth.", text: "Create your first meeting type in your agenda." },
-      docs: ["Bookings", "Payment pages", "Profiles"],
+      docs: ["Bookings", "Profiles", "Workspaces for agencies"],
     },
   },
 };

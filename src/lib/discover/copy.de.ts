@@ -273,12 +273,12 @@ export const copyDe: DiscoverCopy = {
       ],
       faq: [
         { q: "Brauchen Besucher ein Konto?", a: "Nein. Sie wählen eine Zeit, geben Name und E-Mail-Adresse an und erhalten eine Einladung für ihren Kalender." },
-        { q: "Was, wenn zwei Personen gleichzeitig dieselbe Zeit wählen?", a: "Wer zuerst wählt, behält die Zeit 5 Minuten. Die andere Person sieht sie nicht mehr oder bekommt sofort einen anderen Vorschlag." },
+        { q: "Was, wenn zwei Personen gleichzeitig dieselbe Zeit wählen?", a: "Wer zuerst wählt, behält die Zeit 5 Minuten. Die andere Person sieht sie nicht mehr und wählt eine andere Zeit." },
         { q: "Sieht ROUT, was in meinem Kalender steht?", a: "Nein. Nur Beginn und Ende belegter Zeiten werden genutzt, um deine freie Zeit zu berechnen." },
         { q: "Kann ich Anfragen zuerst freigeben?", a: "Ja. Stelle die Bestätigung auf „Anfrage“, dann nimmst du jede Buchung selbst an oder lehnst sie ab." },
       ],
       final: { title: "Weniger E-Mails hin und her.", text: "Lege deine erste Terminart in deiner Agenda an." },
-      docs: ["Termine", "Zahlungsseiten", "Profile"],
+      docs: ["Termine", "Profile", "Workspaces für Agenturen"],
     },
   },
 };

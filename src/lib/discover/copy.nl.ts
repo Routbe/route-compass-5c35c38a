@@ -273,12 +273,12 @@ export const copyNl: DiscoverCopy = {
       ],
       faq: [
         { q: "Hebben bezoekers een account nodig?", a: "Nee. Ze kiezen een moment, vullen naam en e-mailadres in en krijgen een uitnodiging voor hun agenda." },
-        { q: "Wat gebeurt er als twee mensen tegelijk hetzelfde uur kiezen?", a: "Wie eerst kiest, houdt het uur 5 minuten vast. De ander ziet het niet meer of krijgt meteen een ander voorstel." },
+        { q: "Wat gebeurt er als twee mensen tegelijk hetzelfde uur kiezen?", a: "Wie eerst kiest, houdt het uur 5 minuten vast. De ander ziet het niet meer en kiest een ander moment." },
         { q: "Ziet ROUT wat er in mijn agenda staat?", a: "Nee. Alleen het begin en einde van bezette momenten worden gebruikt om je vrije tijd te berekenen." },
         { q: "Kan ik aanvragen eerst goedkeuren?", a: "Ja. Zet bevestigen op 'aanvraag' en je aanvaardt of weigert elke boeking zelf." },
       ],
       final: { title: "Minder heen-en-weer mailen.", text: "Maak je eerste afspraaktype in je agenda." },
-      docs: ["Afspraken", "Betaalpagina's", "Profielen"],
+      docs: ["Afspraken", "Profielen", "Workspaces voor bureaus"],
     },
   },
 };
