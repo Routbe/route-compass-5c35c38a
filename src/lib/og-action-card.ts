@@ -1,4 +1,5 @@
 import { escapeXml, initials } from "@/lib/og-card";
+import { OG_FORMATS, ogFormatQuery, type OgFormat } from "@/lib/og-formats";
 
 /**
  * Share cards (1200×630) for a member's action links: anonymous message, donate,
@@ -93,7 +94,7 @@ export function balancedTitle(text: string, maxChars: number): string[] {
   return best;
 }
 
-export function shareCardSvg(input: { kind: ShareCardKind; lang: ShareCardLang; handle: string; name: string; avatarUrl: string | null; urlLabel: string }) {
+export function shareCardSvg(input: { kind: ShareCardKind; lang: ShareCardLang; handle: string; name: string; avatarUrl: string | null; urlLabel: string; format?: OgFormat }) {
   const { kind, handle, name, avatarUrl } = input;
   const copy = shareCardCopy(kind, input.lang);
   const [c1, c2] = PALETTE[kind];
@@ -116,15 +117,12 @@ export function shareCardSvg(input: { kind: ShareCardKind; lang: ShareCardLang; 
   const textW = Math.min(copy.cta.length, 36) * 14;
   const pillW = Math.min(W, Math.max(380, textW + 120));
   const arrowX = cx + 16 - textW / 2 - 26;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <defs>
+  const defs = `<defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient>
     <linearGradient id="head" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient>
     <clipPath id="card"><rect x="${X}" y="${Y}" width="${W}" height="${HEAD + BODY}" rx="${R}"/></clipPath>
-  </defs>
-  <rect width="1200" height="630" fill="url(#bg)"/>
-  <rect width="1200" height="630" fill="#000000" fill-opacity="0.18"/>
-  <rect x="${X}" y="${Y + 8}" width="${W}" height="${HEAD + BODY}" rx="${R}" fill="#000000" fill-opacity="0.18"/>
+  </defs>`;
+  const content = `  <rect x="${X}" y="${Y + 8}" width="${W}" height="${HEAD + BODY}" rx="${R}" fill="#000000" fill-opacity="0.18"/>
   <g clip-path="url(#card)">
     <rect x="${X}" y="${Y}" width="${W}" height="${HEAD + BODY}" fill="#ffffff"/>
     <rect x="${X}" y="${Y}" width="${W}" height="${HEAD}" fill="url(#head)"/>
@@ -136,15 +134,43 @@ export function shareCardSvg(input: { kind: ShareCardKind; lang: ShareCardLang; 
   <rect x="${cx - pillW / 2}" y="${pillY}" width="${pillW}" height="64" rx="32" fill="#ffffff"/>
   <path d="M${arrowX - 10} ${pillY + 40} l10 -16 l10 16 m-10 -16 v20" stroke="${c1}" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
   <text x="${cx + 16}" y="${pillY + 42}" text-anchor="middle" font-family="Inter" font-weight="700" font-size="25" fill="#131211">${cta}</text>
-  <text x="${cx}" y="${pillY + 108}" text-anchor="middle" font-family="Inter" font-weight="600" font-size="22" fill="#ffffff" fill-opacity="0.85">${escapeXml(input.urlLabel)}</text>
+  <text x="${cx}" y="${pillY + 108}" text-anchor="middle" font-family="Inter" font-weight="600" font-size="22" fill="#ffffff" fill-opacity="0.85">${escapeXml(input.urlLabel)}</text>`;
+  const format = input.format ?? "landscape";
+  if (format === "landscape") {
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  ${defs}
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="#000000" fill-opacity="0.18"/>
+${content}
+</svg>`;
+  }
+  // Tall formats: the same invitation, scaled up and centred inside the safe zone.
+  const { width: FW, height: FH, safeTop, safeBottom } = OG_FORMATS[format];
+  const box = { x: X, y: Y, w: W, h: pillY + 116 - Y };
+  const scale = Math.min((FW - 120) / box.w, (FH - safeTop - safeBottom - 40) / box.h);
+  const tx = (FW - box.w * scale) / 2 - box.x * scale;
+  const ty = safeTop + (FH - safeTop - safeBottom - box.h * scale) / 2 - box.y * scale;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${FW}" height="${FH}" viewBox="0 0 ${FW} ${FH}">
+  ${defs}
+  <rect width="${FW}" height="${FH}" fill="url(#bg)"/>
+  <rect width="${FW}" height="${FH}" fill="#000000" fill-opacity="0.18"/>
+  <g transform="translate(${tx.toFixed(2)} ${ty.toFixed(2)}) scale(${scale.toFixed(4)})">
+${content}
+  </g>
 </svg>`;
 }
 
 /** Absolute PNG URL of a share card (crawlers need absolute https). */
-export function shareCardUrl(handle: string, kind: ShareCardKind, lang: ShareCardLang, space: "root" | "alias" = "root"): string {
+export function shareCardUrl(handle: string, kind: ShareCardKind, lang: ShareCardLang, space: "root" | "alias" = "root", format: OgFormat = "landscape"): string {
+  return `https://rout.be${shareCardPath(handle, kind, lang, space, format)}`;
+}
+
+/** Relative PNG path of a share card in one format (Studio previews and downloads). */
+export function shareCardPath(handle: string, kind: ShareCardKind, lang: ShareCardLang, space: "root" | "alias" = "root", format: OgFormat = "landscape"): string {
   const q = new URLSearchParams({ card: kind, lang });
   if (space === "alias") q.set("space", "alias");
-  return `https://rout.be/api/public/og/${encodeURIComponent(handle)}.png?${q.toString()}`;
+  const f = ogFormatQuery(format);
+  return `/api/public/og/${encodeURIComponent(handle)}.png?${q.toString()}${f ? `&${f}` : ""}`;
 }
 
 /** og/twitter image tags for a share card, with the size and type Snapchat and WhatsApp expect. */
