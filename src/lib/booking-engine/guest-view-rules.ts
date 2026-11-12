@@ -66,8 +66,9 @@ export function defaultHourCycle(locale: string): HourCycle {
   }
 }
 
+/** 24 h keeps two digits (09:30) so columns align; 12 h drops the leading zero (9:30 AM) as clocks do. */
 export function formatSlotTime(iso: string, locale: string, tz: string, hourCycle: HourCycle): string {
-  return new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit", hourCycle, timeZone: tz }).format(new Date(iso));
+  return new Intl.DateTimeFormat(locale, { hour: hourCycle === "h12" ? "numeric" : "2-digit", minute: "2-digit", hourCycle, timeZone: tz }).format(new Date(iso));
 }
 
 /** Monday for the European locales; a locale that reports another first day (e.g. en-US) keeps it. */

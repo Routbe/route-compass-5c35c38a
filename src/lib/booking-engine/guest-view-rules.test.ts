@@ -38,7 +38,7 @@ describe("12 or 24 hours", () => {
     expect(defaultHourCycle("fr")).toBe("h23");
   });
   it("shows the chosen clock in the chosen zone", () => {
-    expect(formatSlotTime("2026-11-12T14:30:00Z", "en-US", "Europe/Brussels", "h12")).toMatch(/^03:30\sPM$/);
+    expect(formatSlotTime("2026-11-12T14:30:00Z", "en-US", "Europe/Brussels", "h12")).toMatch(/^3:30\sPM$/);
     expect(formatSlotTime("2026-11-12T14:30:00Z", "en-US", "Europe/Brussels", "h23")).toBe("15:30");
     expect(formatSlotTime("2026-11-12T14:30:00Z", "nl", "America/New_York", "h23")).toBe("09:30");
   });
