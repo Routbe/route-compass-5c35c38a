@@ -209,12 +209,10 @@ function BookingsScene() {
         </div>
         <div className="dv-cal-times">{[0, 1, 2, 3, 4, 5].map((i) => <span key={i} data-held={i === 1 ? "true" : "false"} />)}</div>
       </div>
-      <div className="dv-float dv-float-a dv-hold">
+      <div className="dv-float dv-hold">
         <svg viewBox="0 0 28 28" className="dv-ring"><circle className="dv-ring-track" cx="14" cy="14" r="12" /><circle className="dv-ring-left" cx="14" cy="14" r="12" /></svg>
-        <Lock className="h-3.5 w-3.5" />
         <span className="dv-mono">{Math.floor(left / 60)}:{String(left % 60).padStart(2, "0")}</span>
       </div>
-      <div className="dv-float dv-float-b"><Globe className="h-3.5 w-3.5" /><span className="dv-mono">GMT+1 · 24h</span></div>
     </div>
   );
 }

@@ -304,8 +304,8 @@
 .dv-cal-times { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 14px; }
 .dv-cal-times span { height: 22px; border-radius: 7px; border: 1px solid oklch(1 0 0 / 0.12); }
 .dv-cal-times span[data-held="true"] { border-color: var(--tp); background: color-mix(in oklab, var(--tp) 16%, transparent); }
-.dv-hold { display: flex; align-items: center; gap: 10px; }
-.dv-hold svg.dv-ring { width: 28px; height: 28px; rotate: -90deg; }
+.dv-hold { bottom: 22px; left: 50%; translate: -50% 0; gap: 10px; padding: 8px 14px 8px 10px; }
+.dv-hold svg.dv-ring { flex: none; width: 24px; height: 24px; rotate: -90deg; }
 .dv-ring circle { fill: none; stroke-width: 3; }
 .dv-ring .dv-ring-track { stroke: oklch(1 0 0 / 0.12); }
 .dv-ring .dv-ring-left { stroke: var(--tp); stroke-linecap: round; stroke-dasharray: 75.4; animation: dv-ring 12s linear infinite; }
