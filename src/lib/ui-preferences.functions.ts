@@ -1,0 +1,26 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireAuth } from "@/lib/auth/middleware";
+
+/** Account copy of the workspace material, in profiles.display_prefs.workspaceUi. */
+const materialSchema = z.object({ material: z.enum(["mechanical", "glass"]) });
+
+export const getAccountUiMaterial = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .handler(async ({ context }) => {
+    const { sql } = await import("./neon");
+    const rows = await sql`select display_prefs->'workspaceUi'->>'material' as material from public.profiles where id = ${context.userId} limit 1`;
+    const material = rows[0]?.["material"];
+    return { material: material === "mechanical" || material === "glass" ? material : null };
+  });
+
+export const saveAccountUiMaterial = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((data) => materialSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const { sql } = await import("./neon");
+    await sql`update public.profiles set display_prefs = jsonb_set(
+      coalesce(display_prefs, '{}'::jsonb), '{workspaceUi}', jsonb_build_object('material', ${data.material}::text), true)
+      where id = ${context.userId}`;
+    return { ok: true };
+  });
