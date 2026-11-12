@@ -375,7 +375,7 @@
 @media (max-width: 639px) and (prefers-reduced-motion: reduce) { .chapter-deck-rail { scroll-behavior: auto; transition: none; } }
 /* Phones: the "more", use-case and agent-step grids become one swipe row instead of a long stack. */
 @media (max-width: 639px) {
-  .gateway-editorial :is(.story-more-grid, #ai-agents ol) { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; margin-inline: -20px; padding: 4px 20px 14px; scrollbar-width: none; }
+  .gateway-editorial :is(.story-more-grid, #ai-agents ol) { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 24px; margin-inline: -24px; padding: 4px 24px 14px; scrollbar-width: none; }
   .gateway-editorial :is(.story-more-grid, #ai-agents ol)::-webkit-scrollbar { display: none; }
   .gateway-editorial :is(.story-more-grid, #ai-agents ol) > * { flex: 0 0 80%; scroll-snap-align: start; padding: 20px; border: 1px solid var(--color-border); border-radius: 14px; background: color-mix(in oklab, var(--color-primary) 4%, var(--color-card)); }
   .gateway-editorial .story-more-grid { margin-top: 32px; }
