@@ -21,8 +21,8 @@ export function StudioToggleCard({ icon, title, subtitle, checked, onCheckedChan
       <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
         <span className="shrink-0">{icon}</span>
         <span className="min-w-0 flex-1 text-left">
-          <span className="block truncate text-sm font-medium">{title}</span>
-          {subtitle && <span className="block truncate text-xs text-muted-foreground">{subtitle}</span>}
+          <span className="block min-w-0 break-words text-sm font-medium">{title}</span>
+          {subtitle && <span className="block min-w-0 break-words text-xs text-muted-foreground">{subtitle}</span>}
         </span>
         <span className="shrink-0" onClick={(e) => e.preventDefault()}>
           <Switch checked={checked} onCheckedChange={onCheckedChange} aria-label={title} />
