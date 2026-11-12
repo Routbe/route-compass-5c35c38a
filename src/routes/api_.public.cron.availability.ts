@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-/** Booking engine worker: sync ICS/CalDAV, release stale holds, recompute availability. LOVABLE_CRON_SECRET. */
+/** Booking engine worker: sync ICS/CalDAV, release stale holds, recompute availability. Protected by cronGuard. */
 async function handle(request: Request) {
   const { cronGuard } = await import("@/lib/cron-auth");
   const denied = await cronGuard(request);
