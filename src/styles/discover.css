@@ -9,6 +9,7 @@
 [data-topic="questions"] { --tp: oklch(0.75 0.19 5); --tp2: oklch(0.80 0.16 55); --tp-hsl: 341 100% 72%; }
 [data-topic="workspaces"] { --tp: oklch(0.80 0.13 300); --tp2: oklch(0.80 0.10 255); --tp-hsl: 263 100% 83%; }
 [data-topic="developers"] { --tp: oklch(0.87 0.18 150); --tp2: oklch(0.80 0.12 175); --tp-hsl: 136 87% 70%; }
+[data-topic="bookings"] { --tp: oklch(0.76 0.16 330); --tp2: oklch(0.85 0.09 355); --tp-hsl: 305 68% 72%; }
 
 .dsc { --dsc-edge: oklch(1 0 0 / 0.1); --dsc-surface: oklch(0.15 0.005 160 / 0.7); --dsc-ink: hsl(var(--foreground)); --dsc-muted: hsl(var(--muted-foreground)); position: relative; overflow-x: clip; }
 .dsc-inner { max-width: 1160px; margin-inline: auto; padding-inline: 24px; }
@@ -118,6 +119,14 @@
 .dsc-topic-title { font-family: var(--font-display); font-size: 25px; line-height: 1.15; }
 .dsc-topic-more { margin-top: auto; padding-top: 14px; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--dsc-muted); }
 .dsc-topic:hover .dsc-topic-more { color: var(--tp); }
+/* Three columns: a lone last tile becomes one wide card instead of leaving two empty cells. */
+@media (min-width: 961px) {
+  .dsc-tiles > li:last-child:nth-child(3n + 1) { grid-column: 1 / -1; }
+  .dsc-tiles > li:last-child:nth-child(3n + 1) .dsc-topic { flex-direction: row; }
+  .dsc-tiles > li:last-child:nth-child(3n + 1) .dsc-topic-visual { flex: 0 0 calc((100% - 32px) / 3); height: auto; min-height: 200px; border-bottom: 0; border-right: 1px solid var(--dsc-edge); }
+  .dsc-tiles > li:last-child:nth-child(3n + 1) .dsc-topic-copy { justify-content: center; padding-inline: 40px; }
+  .dsc-tiles > li:last-child:nth-child(3n + 1) .dsc-topic-more { margin-top: 8px; }
+}
 
 /* Reveal */
 .dsc-reveal { transition: opacity 700ms ease, transform 700ms cubic-bezier(.2,.7,.2,1); }
@@ -284,6 +293,24 @@
   .dsc-marquee-track { width: 100%; }
   .dsc-next-arrow { display: none; }
 }
+/* Bookings scene: a month with free days, one time held with a 5-minute ring. */
+.dv-cal { width: 300px; padding: 18px; }
+.dv-cal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.dv-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.dv-cal-grid span { aspect-ratio: 1; border-radius: 7px; background: oklch(1 0 0 / 0.04); }
+.dv-cal-grid span[data-free="true"] { background: color-mix(in oklab, var(--tp) 22%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--tp) 45%, transparent); animation: dv-cal-in .6s ease-out both; }
+.dv-cal-grid span[data-pick="true"] { background: var(--tp); box-shadow: 0 0 18px -4px var(--tp); }
+@keyframes dv-cal-in { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
+.dv-cal-times { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 14px; }
+.dv-cal-times span { height: 22px; border-radius: 7px; border: 1px solid oklch(1 0 0 / 0.12); }
+.dv-cal-times span[data-held="true"] { border-color: var(--tp); background: color-mix(in oklab, var(--tp) 16%, transparent); }
+.dv-hold { bottom: 6px; left: 50%; translate: -50% 0; gap: 10px; padding: 8px 14px 8px 10px; }
+.dv-hold-ring { flex: none; width: 24px; height: 24px; rotate: -90deg; }
+.dv-hold-ring circle { fill: none; stroke-width: 3; }
+.dv-hold-track { stroke: oklch(1 0 0 / 0.12); }
+.dv-hold-left { stroke: var(--tp); stroke-linecap: round; stroke-dasharray: 75.4; animation: dv-hold-ring 12s linear infinite; }
+@keyframes dv-hold-ring { from { stroke-dashoffset: 0; } to { stroke-dashoffset: 75.4; } }
+
 @media (prefers-reduced-motion: reduce) {
   .dsc *, .dsc *::before, .dsc *::after, .dv-stage *, .dv-stage *::before { animation: none !important; transition: none !important; }
   .dsc-reveal[data-visible="false"], .dsc-steps li { opacity: 1; transform: none; }

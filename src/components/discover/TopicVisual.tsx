@@ -192,6 +192,31 @@ function DevelopersScene() {
   );
 }
 
+function BookingsScene() {
+  const reduced = useReducedMotion();
+  const tick = useTicker(1000, !reduced);
+  // Illustrative countdown from 4:59, looping every 12 s with the ring.
+  const left = 299 - (tick % 12) * 25;
+  const free = new Set([8, 9, 10, 11, 15, 16, 17, 18, 19, 22, 23, 25, 26, 29, 30, 31, 32]);
+  return (
+    <div className="dv-scene">
+      <div className="dv-panel dv-cal">
+        <div className="dv-cal-head"><span className="dv-line dv-line-sm" /><CalendarDays className="h-4 w-4" style={{ color: "var(--tp)" }} /></div>
+        <div className="dv-cal-grid">
+          {Array.from({ length: 35 }, (_, i) => (
+            <span key={i} data-free={free.has(i) ? "true" : "false"} data-pick={i === 16 ? "true" : "false"} style={{ animationDelay: `${i * 30}ms` }} />
+          ))}
+        </div>
+        <div className="dv-cal-times">{[0, 1, 2, 3, 4, 5].map((i) => <span key={i} data-held={i === 1 ? "true" : "false"} />)}</div>
+      </div>
+      <div className="dv-float dv-hold">
+        <svg viewBox="0 0 28 28" className="dv-hold-ring"><circle className="dv-hold-track" cx="14" cy="14" r="12" /><circle className="dv-hold-left" cx="14" cy="14" r="12" /></svg>
+        <span className="dv-mono">{Math.floor(left / 60)}:{String(left % 60).padStart(2, "0")}</span>
+      </div>
+    </div>
+  );
+}
+
 const SCENES: Record<TopicSlug, ComponentType> = {
   profiles: ProfilesScene,
   "qr-studio": QrScene,
@@ -202,4 +227,5 @@ const SCENES: Record<TopicSlug, ComponentType> = {
   questions: QuestionsScene,
   workspaces: WorkspacesScene,
   developers: DevelopersScene,
+  bookings: BookingsScene,
 };

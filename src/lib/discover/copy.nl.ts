@@ -253,5 +253,32 @@ export const copyNl: DiscoverCopy = {
       final: { title: "Je gebruikers verdienen een betere login.", text: "Registreer je eerste app in het developer-portaal." },
       docs: ["Developer-portaal", "Identiteit en OAuth", "AI en MCP", "Webhooks", "Credentials", "Open source"],
     },
+    bookings: {
+      brand: "ROUT Afspraken",
+      title: "Laat mensen een moment bij je boeken.",
+      lead: "Een eigen boekingspagina op je profiel. Jij bepaalt wanneer je beschikbaar bent, je agenda blijft privé en wie boekt houdt het gekozen tijdstip vast terwijl hij zijn gegevens invult.",
+      primary: "Zo werken afspraken",
+      chips: ["5 minuten vastgehouden", "Jouw tijdzone", "Uitnodiging (.ics)", "Groepssessie"],
+      works: ["iCalendar (.ics)", "CalDAV", "Agendalinks (ICS)", "Je profiel", "Workspaces"],
+      features: [
+        { title: "Nooit dubbel geboekt", text: "Elke boeking wordt op het moment zelf gecontroleerd. Een gekozen tijdstip blijft 5 minuten voor de bezoeker gereserveerd." },
+        { title: "Je agenda blijft privé", text: "Van gekoppelde agenda's bewaart ROUT alleen wanneer je bezet bent, nooit titels, plaatsen of deelnemers." },
+        { title: "Jouw regels", text: "Werkuren, pauzes tussen afspraken, minimale voorbereidingstijd en een maximum per dag, week of maand." },
+        { title: "Voor teams en groepen", text: "Groepssessies met een vast aantal plaatsen, of een afspraak met één of met alle teamleden van een workspace." },
+      ],
+      steps: [
+        { title: "Maak een afspraaktype", text: "Kies duur, plaats en of je zelf eerst bevestigt." },
+        { title: "Stel je beschikbaarheid in", text: "Je werkuren, uitzonderingen en eventueel je eigen agenda." },
+        { title: "Deel je link", text: "Bezoekers kiezen een dag en uur in hun eigen tijdzone en krijgen een uitnodiging." },
+      ],
+      faq: [
+        { q: "Hebben bezoekers een account nodig?", a: "Nee. Ze kiezen een moment, vullen naam en e-mailadres in en krijgen een uitnodiging voor hun agenda." },
+        { q: "Wat gebeurt er als twee mensen tegelijk hetzelfde uur kiezen?", a: "Wie eerst kiest, houdt het uur 5 minuten vast. De ander ziet het niet meer en kiest een ander moment." },
+        { q: "Ziet ROUT wat er in mijn agenda staat?", a: "Nee. Alleen het begin en einde van bezette momenten worden gebruikt om je vrije tijd te berekenen." },
+        { q: "Kan ik aanvragen eerst goedkeuren?", a: "Ja. Zet bevestigen op 'aanvraag' en je aanvaardt of weigert elke boeking zelf." },
+      ],
+      final: { title: "Minder heen-en-weer mailen.", text: "Maak je eerste afspraaktype in je agenda." },
+      docs: ["Afspraken", "Profielen", "Workspaces voor bureaus"],
+    },
   },
 };

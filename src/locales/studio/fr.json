@@ -974,5 +974,22 @@
   "booking.rules.businessDaysCount": "Nombre de jours ouvrables",
   "booking.rules.adjacent": "Pas de trous dans ma journée",
   "booking.rules.adjacentHint": "Afficher uniquement les heures accolées à un autre rendez-vous ou au début ou à la fin de vos heures de travail.",
-  "booking.rules.holdNote": "Un invité qui choisit un créneau le retient 5 minutes pendant qu'il remplit ses coordonnées."
+  "booking.rules.holdNote": "Un invité qui choisit un créneau le retient 5 minutes pendant qu'il remplit ses coordonnées.",
+  "booking.public.prevMonth": "Mois précédent",
+  "booking.public.nextMonth": "Mois suivant",
+  "booking.public.calendarLabel": "Jours avec des créneaux libres",
+  "booking.public.slotsCount": "{{n}} créneaux libres",
+  "booking.public.timeFormat": "Format de l’heure",
+  "booking.public.h12": "12 h",
+  "booking.public.h24": "24 h",
+  "booking.public.tzChange": "Changer de fuseau horaire",
+  "booking.public.tzSearch": "Cherchez une ville, une région ou GMT+1…",
+  "booking.public.tzNoResults": "Aucun fuseau horaire trouvé.",
+  "booking.public.tzUseDevice": "Fuseau de mon appareil : {{tz}}",
+  "booking.public.timezoneDetecting": "Détection du fuseau horaire…",
+  "booking.public.period.morning": "Matin",
+  "booking.public.period.afternoon": "Après-midi",
+  "booking.public.period.evening": "Soir",
+  "booking.public.tzSuggested": "Suggérés",
+  "booking.public.tzAll": "Tous les fuseaux horaires"
 }

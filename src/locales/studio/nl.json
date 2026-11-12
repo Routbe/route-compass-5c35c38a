@@ -974,5 +974,22 @@
   "booking.rules.businessDaysCount": "Aantal werkdagen",
   "booking.rules.adjacent": "Geen gaten in mijn dag",
   "booking.rules.adjacentHint": "Toon alleen tijden direct aansluitend op een andere afspraak of op het begin of einde van je werkuren.",
-  "booking.rules.holdNote": "Een gast die een tijdstip kiest, houdt het 5 minuten vast terwijl hij zijn gegevens invult."
+  "booking.rules.holdNote": "Een gast die een tijdstip kiest, houdt het 5 minuten vast terwijl hij zijn gegevens invult.",
+  "booking.public.prevMonth": "Vorige maand",
+  "booking.public.nextMonth": "Volgende maand",
+  "booking.public.calendarLabel": "Dagen met vrije tijden",
+  "booking.public.slotsCount": "{{n}} vrije tijden",
+  "booking.public.timeFormat": "Tijdnotatie",
+  "booking.public.h12": "12 u",
+  "booking.public.h24": "24 u",
+  "booking.public.tzChange": "Tijdzone wijzigen",
+  "booking.public.tzSearch": "Zoek een stad, regio of GMT+1…",
+  "booking.public.tzNoResults": "Geen tijdzone gevonden.",
+  "booking.public.tzUseDevice": "Tijdzone van mijn toestel: {{tz}}",
+  "booking.public.timezoneDetecting": "Tijdzone bepalen…",
+  "booking.public.period.morning": "Ochtend",
+  "booking.public.period.afternoon": "Middag",
+  "booking.public.period.evening": "Avond",
+  "booking.public.tzSuggested": "Voorgesteld",
+  "booking.public.tzAll": "Alle tijdzones"
 }

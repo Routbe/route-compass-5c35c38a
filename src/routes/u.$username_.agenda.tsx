@@ -3,6 +3,7 @@ import { getNextBookingSlots } from "@/lib/booking-engine/booking.functions";
 import { canonicalLinks, jsonLdScript } from "@/lib/social-meta";
 import BookPublic from "@/components/imported-pages/BookPublic";
 import { shareCardMeta } from "@/lib/og-action-card";
+import { loadBookingInitial } from "@/lib/booking-engine/booking-initial";
 
 /**
  * Linked calendar: the public agenda tied to a member's identity. The handle is
@@ -13,7 +14,7 @@ export const Route = createFileRoute("/u/$username_/agenda")({
   loader: async ({ params }) => {
     const event = await getNextBookingSlots({ data: { handle: params.username.replace(/^@/, ""), eventTypeId: null } });
     if (!event) throw notFound();
-    return { eventTypeId: event.eventTypeId, title: event.title, handle: params.username };
+    return { eventTypeId: event.eventTypeId, title: event.title, handle: params.username, initial: await loadBookingInitial(event.eventTypeId) };
   },
   head: ({ loaderData }) => ({
     meta: [
@@ -39,6 +40,6 @@ export const Route = createFileRoute("/u/$username_/agenda")({
 });
 
 function LinkedAgenda() {
-  const { eventTypeId } = Route.useLoaderData();
-  return <BookPublic eventTypeId={eventTypeId} />;
+  const { eventTypeId, initial } = Route.useLoaderData();
+  return <BookPublic eventTypeId={eventTypeId} initial={initial} />;
 }

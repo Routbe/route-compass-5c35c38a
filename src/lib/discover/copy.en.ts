@@ -253,5 +253,32 @@ export const copyEn: DiscoverCopy = {
       final: { title: "Your users deserve a better sign-in.", text: "Register your first app in the developer portal." },
       docs: ["Developer portal", "Identity and OAuth", "AI and MCP", "Webhooks", "Credentials", "Open source"],
     },
+    bookings: {
+      brand: "ROUT Bookings",
+      title: "Let people book a moment with you.",
+      lead: "Your own booking page on your profile. You decide when you are available, your calendar stays private, and whoever books keeps the chosen time while they fill in their details.",
+      primary: "How bookings work",
+      chips: ["Held for 5 minutes", "Your time zone", "Invitation (.ics)", "Group session"],
+      works: ["iCalendar (.ics)", "CalDAV", "Calendar links (ICS)", "Your profile", "Workspaces"],
+      features: [
+        { title: "Never double-booked", text: "Every booking is checked at the moment it is made. A chosen time stays reserved for the visitor for 5 minutes." },
+        { title: "Your calendar stays private", text: "From connected calendars ROUT only keeps when you are busy, never titles, places or attendees." },
+        { title: "Your rules", text: "Working hours, breaks between meetings, minimum notice and a maximum per day, week or month." },
+        { title: "For teams and groups", text: "Group sessions with a fixed number of seats, or a meeting with one or all team members of a workspace." },
+      ],
+      steps: [
+        { title: "Create a meeting type", text: "Choose the length, the place and whether you confirm first." },
+        { title: "Set your availability", text: "Your working hours, exceptions and optionally your own calendar." },
+        { title: "Share your link", text: "Visitors pick a day and time in their own time zone and receive an invitation." },
+      ],
+      faq: [
+        { q: "Do visitors need an account?", a: "No. They pick a time, enter their name and email address and receive an invitation for their calendar." },
+        { q: "What if two people pick the same time at once?", a: "Whoever picks first holds that time for 5 minutes. The other no longer sees it and picks another time." },
+        { q: "Can ROUT see what is in my calendar?", a: "No. Only the start and end of busy moments are used to work out your free time." },
+        { q: "Can I approve requests first?", a: "Yes. Set confirmation to 'request' and you accept or decline every booking yourself." },
+      ],
+      final: { title: "Fewer emails back and forth.", text: "Create your first meeting type in your agenda." },
+      docs: ["Bookings", "Profiles", "Workspaces for agencies"],
+    },
   },
 };

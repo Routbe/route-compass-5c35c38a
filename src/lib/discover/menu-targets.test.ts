@@ -17,5 +17,6 @@ describe("header menu targets", () => {
     }
     expect(menuTarget("studio", false)).toBe("/discover/profiles");
     expect(menuTarget("api", false)).toBe("/discover/developers");
+    expect(menuTarget("agenda", false)).toBe("/discover/bookings");
   });
 });

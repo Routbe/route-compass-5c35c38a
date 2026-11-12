@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
@@ -8,20 +8,35 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useI18n } from "@/lib/i18n";
 import { createBooking, getPublicEventType, getPublicSlots, holdBookingSlot, releaseBookingSlot } from "@/lib/booking-engine/booking.functions";
 import { holdCountdown } from "@/lib/booking-engine/hold-rules";
 import { IntakeForm } from "@/components/booking/IntakeForm";
+import { BookingMonthCalendar } from "@/components/booking/BookingMonthCalendar";
+import { TimezonePicker } from "@/components/booking/TimezonePicker";
 import { validateIntake, type IntakeAnswers } from "@/lib/booking-engine/intake";
 import { offeredSelection } from "@/lib/booking-engine/selection";
+import {
+  canonicalZone, defaultHourCycle, formatSlotTime, groupByPeriod, groupSlotsByDay, isValidTimeZone, localDayKey, type HourCycle,
+} from "@/lib/booking-engine/guest-view-rules";
 
-/** Day key of an instant in the visitor's zone. */
-function localDayKey(iso: string, tz: string) {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
+type PublicType = Awaited<ReturnType<typeof getPublicEventType>>;
+/** Loader data: the page renders with type and times already in place (no spinner on arrival). */
+export type BookingInitial = { type: PublicType; slots: string[]; at: number };
+
+const TZ_KEY = "rout.booking.tz";
+const CLOCK_KEY = "rout.booking.hourCycle";
+function readPref(key: string): string | null {
+  try { return window.localStorage.getItem(key); } catch { return null; }
+}
+function writePref(key: string, value: string | null) {
+  try { if (value == null) window.localStorage.removeItem(key); else window.localStorage.setItem(key, value); } catch { /* private mode */ }
 }
 
-export default function BookPublic({ eventTypeId, selectedStart }: { eventTypeId: string; selectedStart?: string }) {
+export default function BookPublic({ eventTypeId, selectedStart, initial }: { eventTypeId: string; selectedStart?: string; initial?: BookingInitial }) {
   const { t, locale } = useI18n();
   const navigate = useNavigate();
   const getType = useServerFn(getPublicEventType);
@@ -29,27 +44,51 @@ export default function BookPublic({ eventTypeId, selectedStart }: { eventTypeId
   const book = useServerFn(createBooking);
   const holdFn = useServerFn(holdBookingSlot);
   const releaseFn = useServerFn(releaseBookingSlot);
-  // Timezone is read after hydration so SSR and client render the same first frame.
-  const [tz, setTz] = useState("UTC");
-  useEffect(() => setTz(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"), []);
+  // Zone and clock are read after hydration so SSR and the first client frame match; until then the
+  // time picker shows a same-size placeholder instead of UTC times that would jump a moment later.
+  const [prefs, setPrefs] = useState<{ tz: string; device: string; hourCycle: HourCycle } | null>(null);
+  useEffect(() => {
+    const device = canonicalZone(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
+    const saved = readPref(TZ_KEY);
+    const clock = readPref(CLOCK_KEY);
+    setPrefs({
+      device,
+      tz: saved && isValidTimeZone(saved) ? canonicalZone(saved) : device,
+      hourCycle: clock === "h12" || clock === "h23" ? clock : defaultHourCycle(locale),
+    });
+  }, [locale]);
+  const tz = prefs?.tz ?? "UTC";
+  const setZone = useCallback((next: string, explicit: boolean) => {
+    writePref(TZ_KEY, explicit ? next : null);
+    setPrefs((p) => (p ? { ...p, tz: next } : p));
+  }, []);
+  const setClockPref = useCallback((hc: HourCycle) => {
+    writePref(CLOCK_KEY, hc);
+    setPrefs((p) => (p ? { ...p, hourCycle: hc } : p));
+  }, []);
 
-  const typeQ = useQuery({ queryKey: ["booking-type", eventTypeId], queryFn: () => getType({ data: { id: eventTypeId } }) });
+  const typeQ = useQuery({
+    queryKey: ["booking-type", eventTypeId],
+    queryFn: () => getType({ data: { id: eventTypeId } }),
+    initialData: initial?.type ?? undefined,
+    initialDataUpdatedAt: initial?.at,
+    staleTime: 5 * 60_000,
+  });
   // The visitor's own hold stays visible to them; read through a ref so holding never resets the list.
   const holdRef = useRef<string | null>(null);
   const slotsQ = useQuery({
     queryKey: ["booking-slots", eventTypeId],
     queryFn: () => getSlots({ data: { id: eventTypeId, holdId: holdRef.current } }),
+    initialData: initial ? { slots: initial.slots } : undefined,
+    initialDataUpdatedAt: initial?.at,
     staleTime: 30_000,
+    // Other visitors book and hold too: refresh while the page is open and when it comes back into view.
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
   });
 
-  const byDay = useMemo(() => {
-    const m = new Map<string, string[]>();
-    for (const s of slotsQ.data?.slots ?? []) {
-      const k = localDayKey(s, tz);
-      m.set(k, [...(m.get(k) ?? []), s]);
-    }
-    return m;
-  }, [slotsQ.data, tz]);
+  const byDay = useMemo(() => groupSlotsByDay(slotsQ.data?.slots ?? [], tz), [slotsQ.data, tz]);
+  const counts = useMemo(() => new Map([...byDay].map(([k, v]) => [k, v.length])), [byDay]);
   const dayKeys = [...byDay.keys()];
   const [day, setDay] = useState<string | null>(null);
   const activeDay = day && byDay.has(day) ? day : dayKeys[0] ?? null;
@@ -73,13 +112,13 @@ export default function BookPublic({ eventTypeId, selectedStart }: { eventTypeId
   const countdown = hold ? holdCountdown(hold.expiresAt, clock) : null;
 
   useEffect(() => {
-    if (selectionApplied || !slotsQ.data) return;
+    if (selectionApplied || !slotsQ.data || !prefs) return;
     const offered = offeredSelection(selectedStart, slotsQ.data.slots);
     if (offered) { setDay(localDayKey(offered, tz)); void pickSlot(offered); }
     setSelectionApplied(true);
     // pickSlot only reads stable setters and the current hold.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedStart, slotsQ.data, tz, selectionApplied]);
+  }, [selectedStart, slotsQ.data, tz, prefs, selectionApplied]);
 
   const releaseHold = (h = hold) => {
     if (!h) return;
@@ -109,11 +148,13 @@ export default function BookPublic({ eventTypeId, selectedStart }: { eventTypeId
   }
 
   const et = typeQ.data;
-  if (typeQ.isLoading) return <AppLayout><div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div></AppLayout>;
+  if (typeQ.isLoading && !typeQ.data) return <AppLayout><div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div></AppLayout>;
   if (!et) return <AppLayout><p className="py-20 text-center text-muted-foreground">{t("booking.public.notFound")}</p></AppLayout>;
 
-  const dayLabel = (k: string) => new Intl.DateTimeFormat(locale, { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${k}T12:00:00Z`));
-  const timeLabel = (iso: string) => new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit", timeZone: tz }).format(new Date(iso));
+  const hourCycle = prefs?.hourCycle ?? "h23";
+  const dayLabel = (k: string) => new Intl.DateTimeFormat(locale, { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${k}T12:00:00Z`));
+  const timeLabel = (iso: string) => formatSlotTime(iso, locale, tz, hourCycle);
+  const today = localDayKey(new Date().toISOString(), tz);
   const LocIcon = et.locationKind === "video" ? Video : et.locationKind === "phone" ? Phone : MapPin;
 
   const submit = async () => {
@@ -143,8 +184,8 @@ export default function BookPublic({ eventTypeId, selectedStart }: { eventTypeId
 
   return (
     <AppLayout>
-      <div className="mx-auto grid max-w-4xl gap-6 py-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
-        <section className="space-y-3 rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm">
+      <div className="mx-auto grid max-w-5xl gap-6 py-6 md:grid-cols-[minmax(0,0.85fr)_minmax(0,2fr)]">
+        <section className="h-fit space-y-3 rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm">
           {et.hostName && <p className="text-sm text-muted-foreground">{et.hostName}</p>}
           <h1 className="text-2xl font-bold tracking-tight">{et.title}</h1>
           {et.description && <p className="text-sm text-muted-foreground">{et.description}</p>}
@@ -152,35 +193,51 @@ export default function BookPublic({ eventTypeId, selectedStart }: { eventTypeId
             <li className="flex items-center gap-2"><Clock className="h-4 w-4 text-muted-foreground" />{t("booking.public.minutes", { n: et.durationMinutes })}</li>
             <li className="flex items-center gap-2"><LocIcon className="h-4 w-4 text-muted-foreground" />{t(`booking.type.location.${et.locationKind}`)}</li>
             <li className="flex items-center gap-2"><CalendarClock className="h-4 w-4 text-muted-foreground" />{et.priceCents != null ? `€ ${(et.priceCents / 100).toFixed(2)}` : t("booking.public.free")}</li>
-            <li className="flex items-center gap-2"><Globe className="h-4 w-4 text-muted-foreground" />{t("booking.public.timezone", { tz })}</li>
+            <li className="flex items-center gap-2"><Globe className="h-4 w-4 text-muted-foreground" />{prefs ? t("booking.public.timezone", { tz: tz.split("/").pop()!.replace(/_/g, " ") }) : t("booking.public.timezoneDetecting")}</li>
           </ul>
         </section>
 
-        <section className="space-y-5 rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm">
-          {error && <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
-          <div>
-            <h2 className="mb-3 text-sm font-semibold">{t("booking.public.pickDay")}</h2>
-            {slotsQ.isLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            ) : dayKeys.length === 0 ? (
+        <section aria-labelledby="bk-pick" className="rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm">
+          <h2 id="bk-pick" className="sr-only">{t("booking.public.pickDay")}</h2>
+          {error && <p role="alert" className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
+          {!prefs || (slotsQ.isLoading && !slotsQ.data) ? (
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]" aria-busy="true">
+              <Skeleton className="aspect-[7/6] w-full rounded-xl" />
+              <div className="space-y-2">{Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-9 w-full rounded-lg" />)}</div>
+            </div>
+          ) : dayKeys.length === 0 ? (
+            <div className="space-y-3 py-6 text-center">
               <p className="text-sm text-muted-foreground">{t("booking.public.noSlots")}</p>
-            ) : (
-              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-                {dayKeys.map((k) => (
-                  <Button key={k} size="sm" variant={k === activeDay ? "default" : "soft"} className="shrink-0 capitalize" onClick={() => { setDay(k); setSlot(null); }}>
-                    {dayLabel(k)}
-                  </Button>
-                ))}
-              </div>
-            )}
-          </div>
-          {activeDay && (
-            <div>
-              <h2 className="mb-3 text-sm font-semibold">{t("booking.public.pickTime")}</h2>
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                {(byDay.get(activeDay) ?? []).map((s) => (
-                  <Button key={s} size="sm" variant={s === slot ? "default" : "soft"} disabled={holding} onClick={() => void pickSlot(s)}>{timeLabel(s)}</Button>
-                ))}
+              <div className="flex justify-center"><TimezonePicker value={tz} device={prefs.device} onChange={setZone} /></div>
+            </div>
+          ) : (
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+              <BookingMonthCalendar counts={counts} activeDay={activeDay} today={today} onPick={(k) => { setDay(k); setError(null); }} />
+              <div className="min-w-0 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold first-letter:uppercase" aria-live="polite">{activeDay ? dayLabel(activeDay) : t("booking.public.pickTime")}</h3>
+                  <ToggleGroup type="single" size="sm" value={hourCycle} onValueChange={(v) => { if (v === "h12" || v === "h23") setClockPref(v); }} aria-label={t("booking.public.timeFormat")}>
+                    <ToggleGroupItem value="h12" className="h-7 px-2.5 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{t("booking.public.h12")}</ToggleGroupItem>
+                    <ToggleGroupItem value="h23" className="h-7 px-2.5 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{t("booking.public.h24")}</ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
+                <TimezonePicker value={tz} device={prefs.device} onChange={setZone} />
+                {activeDay && (
+                  <div className="max-h-[26rem] space-y-4 overflow-y-auto pr-1">
+                    {groupByPeriod(byDay.get(activeDay) ?? [], tz).map((g) => (
+                      <div key={g.period} role="group" aria-label={t(`booking.public.period.${g.period}`)}>
+                        <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{t(`booking.public.period.${g.period}`)}</p>
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
+                          {g.slots.map((s) => (
+                            <Button key={s} size="sm" variant={s === slot ? "default" : "soft"} className="tabular-nums" aria-pressed={s === slot} disabled={holding} onClick={() => void pickSlot(s)}>
+                              {timeLabel(s)}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -194,7 +251,7 @@ export default function BookPublic({ eventTypeId, selectedStart }: { eventTypeId
           </DialogHeader>
           {slot && (
             <p className="text-sm text-muted-foreground">
-              {et.title} · {new Intl.DateTimeFormat(locale, { dateStyle: "full", timeStyle: "short", timeZone: tz }).format(new Date(slot))}
+              {et.title} · {new Intl.DateTimeFormat(locale, { dateStyle: "full", timeStyle: "short", hourCycle, timeZone: tz }).format(new Date(slot))} · {tz.replace(/_/g, " ")}
             </p>
           )}
           {holding && (

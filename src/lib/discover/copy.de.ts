@@ -253,5 +253,32 @@ export const copyDe: DiscoverCopy = {
       final: { title: "Deine Nutzer verdienen eine bessere Anmeldung.", text: "Registriere deine erste App im Entwicklerportal." },
       docs: ["Entwicklerportal", "Identität und OAuth", "KI und MCP", "Webhooks", "Nachweise", "Open Source"],
     },
+    bookings: {
+      brand: "ROUT Termine",
+      title: "Lass Menschen einen Termin bei dir buchen.",
+      lead: "Deine eigene Buchungsseite auf deinem Profil. Du bestimmst, wann du verfügbar bist, dein Kalender bleibt privat, und wer bucht, behält die gewählte Zeit, während er seine Angaben ausfüllt.",
+      primary: "So funktionieren Termine",
+      chips: ["5 Minuten reserviert", "Deine Zeitzone", "Einladung (.ics)", "Gruppentermin"],
+      works: ["iCalendar (.ics)", "CalDAV", "Kalenderlinks (ICS)", "Dein Profil", "Workspaces"],
+      features: [
+        { title: "Nie doppelt gebucht", text: "Jede Buchung wird im Moment selbst geprüft. Eine gewählte Zeit bleibt 5 Minuten für den Besucher reserviert." },
+        { title: "Dein Kalender bleibt privat", text: "Aus verbundenen Kalendern speichert ROUT nur, wann du belegt bist, nie Titel, Orte oder Teilnehmer." },
+        { title: "Deine Regeln", text: "Arbeitszeiten, Pausen zwischen Terminen, Mindestvorlauf und ein Maximum pro Tag, Woche oder Monat." },
+        { title: "Für Teams und Gruppen", text: "Gruppentermine mit fester Platzzahl oder ein Termin mit einem oder allen Teammitgliedern eines Workspace." },
+      ],
+      steps: [
+        { title: "Lege eine Terminart an", text: "Wähle Dauer, Ort und ob du zuerst bestätigst." },
+        { title: "Lege deine Verfügbarkeit fest", text: "Deine Arbeitszeiten, Ausnahmen und auf Wunsch dein eigener Kalender." },
+        { title: "Teile deinen Link", text: "Besucher wählen Tag und Uhrzeit in ihrer eigenen Zeitzone und erhalten eine Einladung." },
+      ],
+      faq: [
+        { q: "Brauchen Besucher ein Konto?", a: "Nein. Sie wählen eine Zeit, geben Name und E-Mail-Adresse an und erhalten eine Einladung für ihren Kalender." },
+        { q: "Was, wenn zwei Personen gleichzeitig dieselbe Zeit wählen?", a: "Wer zuerst wählt, behält die Zeit 5 Minuten. Die andere Person sieht sie nicht mehr und wählt eine andere Zeit." },
+        { q: "Sieht ROUT, was in meinem Kalender steht?", a: "Nein. Nur Beginn und Ende belegter Zeiten werden genutzt, um deine freie Zeit zu berechnen." },
+        { q: "Kann ich Anfragen zuerst freigeben?", a: "Ja. Stelle die Bestätigung auf „Anfrage“, dann nimmst du jede Buchung selbst an oder lehnst sie ab." },
+      ],
+      final: { title: "Weniger E-Mails hin und her.", text: "Lege deine erste Terminart in deiner Agenda an." },
+      docs: ["Termine", "Profile", "Workspaces für Agenturen"],
+    },
   },
 };

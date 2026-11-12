@@ -974,5 +974,22 @@
   "booking.rules.businessDaysCount": "Anzahl Werktage",
   "booking.rules.adjacent": "Keine Lücken in meinem Tag",
   "booking.rules.adjacentHint": "Nur Zeiten direkt im Anschluss an einen anderen Termin oder an Beginn oder Ende deiner Arbeitszeiten zeigen.",
-  "booking.rules.holdNote": "Ein Gast, der eine Zeit wählt, hält sie 5 Minuten fest, während er seine Daten eingibt."
+  "booking.rules.holdNote": "Ein Gast, der eine Zeit wählt, hält sie 5 Minuten fest, während er seine Daten eingibt.",
+  "booking.public.prevMonth": "Vorheriger Monat",
+  "booking.public.nextMonth": "Nächster Monat",
+  "booking.public.calendarLabel": "Tage mit freien Zeiten",
+  "booking.public.slotsCount": "{{n}} freie Zeiten",
+  "booking.public.timeFormat": "Zeitformat",
+  "booking.public.h12": "12 Std.",
+  "booking.public.h24": "24 Std.",
+  "booking.public.tzChange": "Zeitzone ändern",
+  "booking.public.tzSearch": "Stadt, Region oder GMT+1 suchen…",
+  "booking.public.tzNoResults": "Keine Zeitzone gefunden.",
+  "booking.public.tzUseDevice": "Zeitzone meines Geräts: {{tz}}",
+  "booking.public.timezoneDetecting": "Zeitzone wird ermittelt…",
+  "booking.public.period.morning": "Vormittag",
+  "booking.public.period.afternoon": "Nachmittag",
+  "booking.public.period.evening": "Abend",
+  "booking.public.tzSuggested": "Vorgeschlagen",
+  "booking.public.tzAll": "Alle Zeitzonen"
 }
