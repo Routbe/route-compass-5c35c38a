@@ -704,6 +704,8 @@
   "gateway.typing.handle": "Réserver ton @handle…",
   "gateway.typing.paste": "Colle un lien…",
   "gateway.typing.qr": "Générer un code QR…",
+  "gateway.deck.prev": "Produit précédent",
+  "gateway.deck.next": "Produit suivant",
   "handle.available": "Ce nom d'utilisateur est disponible",
   "handle.checking": "Vérification de la disponibilité…",
   "handle.invalid": "Seuls les lettres, chiffres et tirets sont autorisés",

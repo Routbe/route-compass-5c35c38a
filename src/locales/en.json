@@ -704,6 +704,8 @@
   "gateway.typing.handle": "Claim your @handle…",
   "gateway.typing.paste": "Paste a link…",
   "gateway.typing.qr": "Generate a QR code…",
+  "gateway.deck.prev": "Previous product",
+  "gateway.deck.next": "Next product",
   "handle.available": "Username is available",
   "handle.checking": "Checking availability…",
   "handle.invalid": "Only letters, numbers and hyphens are allowed",
