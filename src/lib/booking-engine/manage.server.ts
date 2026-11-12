@@ -89,6 +89,8 @@ export async function overview(userId: string) {
   const s = (v: unknown) => (v == null ? null : String(v));
   return {
     workspaceId: canWs ? workspaceId : null,
+    /** Holds, limits and business-day windows are live (db/0218). */
+    phase2: await hasPhase2().catch(() => false),
     members,
     eventTypes: types.map((t) => ({
       id: String(t["id"]), workspaceId: s(t["workspace_id"]), slug: String(t["slug"]), title: String(t["title"]),

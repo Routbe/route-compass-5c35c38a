@@ -162,6 +162,8 @@ type Draft = {
   price: string; locationKind: "video" | "address" | "phone"; locationValue: string;
   routingStrategy: "STRICT" | "ROUND_ROBIN" | "COLLECTIVE"; hostUserIds: string[];
   resourceCapacity: number; customFields: IntakeField[];
+  limitPerDay: number | null; limitPerWeek: number | null; limitPerMonth: number | null; limitPerGuest: number | null;
+  horizonBusinessDays: number | null; adjacentOnly: boolean; rulesTimezone: string | null;
 };
 
 const slugify = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "afspraak";
@@ -174,11 +176,15 @@ function toDraft(e: EventType | null, userId: string): Draft {
         maxDaysAhead: e.maxDaysAhead, confirmationMode: e.confirmationMode, price: e.priceCents == null ? "" : (e.priceCents / 100).toFixed(2),
         locationKind: e.locationKind, locationValue: e.locationValue ?? "", routingStrategy: e.routingStrategy,
         hostUserIds: e.hosts.map((h) => h.userId), resourceCapacity: e.resourceCapacity, customFields: e.customFields,
+        limitPerDay: e.limitPerDay, limitPerWeek: e.limitPerWeek, limitPerMonth: e.limitPerMonth, limitPerGuest: e.limitPerGuest,
+        horizonBusinessDays: e.horizonBusinessDays, adjacentOnly: e.adjacentOnly, rulesTimezone: e.rulesTimezone,
       }
     : {
         id: null, workspace: false, title: "", slug: "", durationMinutes: 30, bufferBeforeMinutes: 0, bufferAfterMinutes: 0,
         minimumNoticeHours: 2, maxDaysAhead: 30, confirmationMode: "instant", price: "", locationKind: "video", locationValue: "",
         routingStrategy: "STRICT", hostUserIds: [userId], resourceCapacity: 1, customFields: [],
+        limitPerDay: null, limitPerWeek: null, limitPerMonth: null, limitPerGuest: null,
+        horizonBusinessDays: null, adjacentOnly: false, rulesTimezone: null,
       };
 }
 
@@ -187,6 +193,57 @@ function NumberField({ label, value, onChange, min, max, step }: { label: string
     <div className="space-y-1.5">
       <Label>{label}</Label>
       <Input aria-label={label} type="number" inputMode="numeric" min={min} max={max} step={step ?? 1} value={value} onChange={(e) => onChange(Number(e.target.value))} />
+    </div>
+  );
+}
+
+/** Empty = no limit. Out-of-range input is clamped on save. */
+function OptionalNumberField({ label, hint, value, onChange, min, max }: { label: string; hint?: string; value: number | null; onChange: (n: number | null) => void; min: number; max: number }) {
+  const id = `opt-${label.replace(/\W+/g, "-")}`;
+  return (
+    <div className="min-w-0 space-y-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <Input id={id} type="number" inputMode="numeric" min={min} max={max} placeholder="—" value={value ?? ""}
+        onChange={(e) => onChange(e.target.value === "" ? null : Math.round(Number(e.target.value)))} />
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+    </div>
+  );
+}
+
+const clampOpt = (n: number | null, min: number, max: number) => (n == null || !Number.isFinite(n) ? null : Math.min(max, Math.max(min, n)));
+
+function SchedulingRules({ draft, set }: { draft: Draft; set: <K extends keyof Draft>(k: K, v: Draft[K]) => void }) {
+  const { t } = useI18n();
+  return (
+    <div className="mt-6 space-y-4 rounded-xl border border-border bg-background/60 p-4">
+      <div>
+        <h3 className="text-sm font-semibold">{t("booking.rules.title")}</h3>
+        <p className="text-xs text-muted-foreground">{t("booking.rules.intro")}</p>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <OptionalNumberField label={t("booking.rules.perDay")} value={draft.limitPerDay} min={1} max={200} onChange={(n) => set("limitPerDay", n)} />
+        <OptionalNumberField label={t("booking.rules.perWeek")} value={draft.limitPerWeek} min={1} max={1000} onChange={(n) => set("limitPerWeek", n)} />
+        <OptionalNumberField label={t("booking.rules.perMonth")} value={draft.limitPerMonth} min={1} max={5000} onChange={(n) => set("limitPerMonth", n)} />
+        <OptionalNumberField label={t("booking.rules.perGuest")} hint={t("booking.rules.perGuestHint")} value={draft.limitPerGuest} min={1} max={50} onChange={(n) => set("limitPerGuest", n)} />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="min-w-0 space-y-2">
+          <label className="flex items-start gap-3 text-sm">
+            <Switch checked={draft.horizonBusinessDays != null} onCheckedChange={(v) => set("horizonBusinessDays", v ? 10 : null)} className="mt-0.5 shrink-0" />
+            <span className="min-w-0"><span className="block font-medium">{t("booking.rules.businessDays")}</span>
+              <span className="block text-xs text-muted-foreground">{t("booking.rules.businessDaysHint")}</span></span>
+          </label>
+          {draft.horizonBusinessDays != null && (
+            <OptionalNumberField label={t("booking.rules.businessDaysCount")} value={draft.horizonBusinessDays} min={1} max={260} onChange={(n) => set("horizonBusinessDays", n ?? 1)} />
+          )}
+        </div>
+        <label className="flex items-start gap-3 text-sm">
+          <Switch checked={draft.adjacentOnly} onCheckedChange={(v) => set("adjacentOnly", v)} className="mt-0.5 shrink-0" />
+          <span className="min-w-0"><span className="block font-medium">{t("booking.rules.adjacent")}</span>
+            <span className="block text-xs text-muted-foreground">{t("booking.rules.adjacentHint")}</span></span>
+        </label>
+      </div>
+      <p className="text-xs text-muted-foreground">{t("booking.rules.holdNote")}</p>
     </div>
   );
 }
@@ -261,6 +318,10 @@ function EventTypeForm({ data, draft, setDraft, onDone }: { data: Studio; draft:
           resourceCapacity: Math.min(100, Math.max(1, Math.round(draft.resourceCapacity) || 1)),
           customFields: draft.customFields.map((f) => ({ ...f, label: f.label.trim() })).filter((f) => f.label),
           hostUserIds: ws ? (draft.routingStrategy === "STRICT" ? draft.hostUserIds.slice(0, 1) : draft.hostUserIds) : [data.userId],
+          limitPerDay: clampOpt(draft.limitPerDay, 1, 200), limitPerWeek: clampOpt(draft.limitPerWeek, 1, 1000),
+          limitPerMonth: clampOpt(draft.limitPerMonth, 1, 5000), limitPerGuest: clampOpt(draft.limitPerGuest, 1, 50),
+          horizonBusinessDays: clampOpt(draft.horizonBusinessDays, 1, 260), adjacentOnly: draft.adjacentOnly,
+          rulesTimezone: draft.rulesTimezone,
         },
       },
     }).catch(() => ({ ok: false as const, reason: "invalid" }));
@@ -378,6 +439,7 @@ function EventTypeForm({ data, draft, setDraft, onDone }: { data: Studio; draft:
         <NumberField label="Capaciteit per tijdslot" value={draft.resourceCapacity} onChange={(n) => set("resourceCapacity", n)} min={1} max={100} />
         <p className="self-end text-xs text-muted-foreground">Meer dan 1 = meerdere gasten tegelijk in hetzelfde tijdslot (groepssessie, meerdere stoelen).</p>
       </div>
+      {data.phase2 && <SchedulingRules draft={draft} set={set} />}
       <IntakeEditor fields={draft.customFields} onChange={(f) => set("customFields", f)} />
       <div className="mt-6 flex flex-wrap gap-2">
         <Button onClick={submit} disabled={saving}>{saving && <Loader2 className="h-4 w-4 animate-spin" />}{t("booking.type.save")}</Button>
