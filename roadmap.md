@@ -50,7 +50,7 @@
 - [ ] Overige wachtende migraties (0204 E2EE = alleen feature-branch, 0205–0207, 0213): eerst nakijken, dan akkoord vragen
 - [x] Ontdek-pagina's: per onderdeel een eigen landingspagina (Profielen, QR Studio, Links & statistieken, ROUT ID, ROUT-kaart, Steun voor makers, Vragen & stories, Workspaces, Developers) met illustraties, effecten en links naar de detailpagina's, in NL/EN/FR/DE
 - [x] Hoofdpagina na de kop: meer visuele effecten (Neon-stijl met eigen zwier), onderdelen-overzicht als beeldtegels, knoppen naar de nieuwe Ontdek-pagina's i.p.v. inlogscherm
-- [ ] Detailpagina's (docs): knop "Open ROUT Studio" is vervangen door link naar het onderdeel (klaar); vaste Nederlandse teksten ("Zo werkt het", "Veelgestelde vragen", "Verder met ROUT") nog vertalen
+- [x] Detailpagina's (docs): knop "Open ROUT Studio" is vervangen door link naar het onderdeel (klaar); vaste Nederlandse teksten ("Zo werkt het", "Veelgestelde vragen", "Verder met ROUT") nog vertalen
 
 ## Nieuwe vraag (11-11): 2FA, herstelsleutel, verificatieknop, Studio-concept
 - [x] ROUT-kaart: gebruiker met actieve tweestapsverificatie krijgt toch "zet eerst 2FA aan"
@@ -86,15 +86,16 @@
 - [ ] Scaleway-opslag live controleren (wacht op Scaleway-sleutels op de server)
 
 ## Nieuwe vraag (12-11): openstaand overzicht vorige AI afmaken
-- [ ] Hoofdpagina mobiel: 9 productsecties als tab/swipe-deck; kleur per sectie strikt eigen (geen ROUT-groen in grafieken)
-- [ ] Studio: lokaal opslaan gebeurt aantoonbaar vóór elke serveropslag
-- [ ] Studio: labels/schakelaars niet afgesneden (StudioToggleCard, LiveStatusAccordion)
-- [ ] Studio: laatste modus (privé/geverifieerd) ook op het account bewaren (display_prefs)
-- [ ] Knoppen: klassiek = 1px lichte binnenrand, harde 2px schaduw, indruk 1.5px; glas = 1px rand 8%, blur 16px, geen gloed
-- [ ] Badges: geen flikkering bij laden
-- [ ] Privacy-schild: geen wettelijke naam of handelsnaam in openbaar profiel
-- [ ] Live-blokken Steam/Last.fm/muziek: verdwijnen als gegevens verouderd zijn
-- [ ] ROUT-kaart: privégegevens bekijken max 2 minuten per bevestiging (nu 5)
-- [ ] Docs-pagina's: "Zo werkt het", "Veelgestelde vragen", "Verder met ROUT" vertalen
+- [x] Hoofdpagina mobiel: 9 productsecties als tab/swipe-deck; kleur per sectie strikt eigen (geen ROUT-groen in grafieken); telefoonlengte 22.900 → 11.100 px
+- [ ] Hoofdpagina mobiel verder inkorten naar 4.500–6.000 px: vraagt keuze welke blokken weg/samen mogen
+- [x] Studio: lokaal opslaan gebeurt aantoonbaar vóór elke serveropslag
+- [x] Studio: labels/schakelaars niet afgesneden (StudioToggleCard, LiveStatusAccordion)
+- [x] Studio: laatste modus (privé/geverifieerd) ook op het account bewaren (display_prefs)
+- [x] Knoppen: klassiek = 1px lichte binnenrand, harde 2px schaduw, indruk 1.5px; glas = 1px rand 8%, blur 16px, geen gloed
+- [x] Badges: geen flikkering bij laden
+- [x] Privacy-schild: geen wettelijke naam of handelsnaam in openbaar profiel
+- [x] Live-blokken Steam/Last.fm/muziek: verdwijnen als gegevens verouderd zijn
+- [x] ROUT-kaart: privégegevens bekijken max 2 minuten per bevestiging (nu 5)
+- [x] Docs-pagina's: "Zo werkt het", "Veelgestelde vragen", "Verder met ROUT" vertalen
 - [ ] Boekingen fase 2 (soft-lock 5 min + aftelklok, limieten per gast): wacht op akkoord voor databasewijziging op live Neon
 - [ ] Herstelkluis v2 (Argon2id, wachttijd, Merkle): wacht op 4 keuzes van eigenaar (docs/security/recovery-vault-design.md §7)
