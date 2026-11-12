@@ -71,3 +71,13 @@ export function mergeHostStarts(
   }
   return [...result].sort((a, b) => a - b).map((t) => new Date(t));
 }
+
+/**
+ * A business-day window needs that many calendar days cached: n working days
+ * span at most ceil(n·7/5) + 2 calendar days (a weekend on each side).
+ * The stored max-days-ahead is raised to cover it, never above 365.
+ */
+export function effectiveMaxDaysAhead(maxDaysAhead: number, horizonBusinessDays: number | null): number {
+  if (horizonBusinessDays == null) return maxDaysAhead;
+  return Math.min(365, Math.max(maxDaysAhead, Math.ceil((horizonBusinessDays * 7) / 5) + 2));
+}
