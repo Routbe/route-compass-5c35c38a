@@ -974,5 +974,20 @@
   "booking.rules.businessDaysCount": "Number of business days",
   "booking.rules.adjacent": "No gaps in my day",
   "booking.rules.adjacentHint": "Only show times right next to another appointment or the start or end of your working hours.",
-  "booking.rules.holdNote": "A guest who picks a time holds it for 5 minutes while filling in their details."
+  "booking.rules.holdNote": "A guest who picks a time holds it for 5 minutes while filling in their details.",
+  "booking.public.prevMonth": "Previous month",
+  "booking.public.nextMonth": "Next month",
+  "booking.public.calendarLabel": "Days with free times",
+  "booking.public.slotsCount": "{{n}} free times",
+  "booking.public.timeFormat": "Time format",
+  "booking.public.h12": "12h",
+  "booking.public.h24": "24h",
+  "booking.public.tzChange": "Change time zone",
+  "booking.public.tzSearch": "Search a city, region or GMT+1…",
+  "booking.public.tzNoResults": "No time zone found.",
+  "booking.public.tzUseDevice": "My device's time zone: {{tz}}",
+  "booking.public.timezoneDetecting": "Detecting time zone…",
+  "booking.public.period.morning": "Morning",
+  "booking.public.period.afternoon": "Afternoon",
+  "booking.public.period.evening": "Evening"
 }
