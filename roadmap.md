@@ -84,3 +84,17 @@
 - [x] Voorbeeldafbeelding + kleur: hoofdpagina, about, alle info/docs-pagina's, 9 Ontdek-pagina's (eigen kaart per onderdeel), korte links/uitnodiging/statistieken
 - [x] Schuifbalk en tekstselectie volgen het thema overal; Ontdek-pagina's selecteren in hun eigen kleur
 - [ ] Scaleway-opslag live controleren (wacht op Scaleway-sleutels op de server)
+
+## Nieuwe vraag (12-11): openstaand overzicht vorige AI afmaken
+- [ ] Hoofdpagina mobiel: 9 productsecties als tab/swipe-deck; kleur per sectie strikt eigen (geen ROUT-groen in grafieken)
+- [ ] Studio: lokaal opslaan gebeurt aantoonbaar vóór elke serveropslag
+- [ ] Studio: labels/schakelaars niet afgesneden (StudioToggleCard, LiveStatusAccordion)
+- [ ] Studio: laatste modus (privé/geverifieerd) ook op het account bewaren (display_prefs)
+- [ ] Knoppen: klassiek = 1px lichte binnenrand, harde 2px schaduw, indruk 1.5px; glas = 1px rand 8%, blur 16px, geen gloed
+- [ ] Badges: geen flikkering bij laden
+- [ ] Privacy-schild: geen wettelijke naam of handelsnaam in openbaar profiel
+- [ ] Live-blokken Steam/Last.fm/muziek: verdwijnen als gegevens verouderd zijn
+- [ ] ROUT-kaart: privégegevens bekijken max 2 minuten per bevestiging (nu 5)
+- [ ] Docs-pagina's: "Zo werkt het", "Veelgestelde vragen", "Verder met ROUT" vertalen
+- [ ] Boekingen fase 2 (soft-lock 5 min + aftelklok, limieten per gast): wacht op akkoord voor databasewijziging op live Neon
+- [ ] Herstelkluis v2 (Argon2id, wachttijd, Merkle): wacht op 4 keuzes van eigenaar (docs/security/recovery-vault-design.md §7)
