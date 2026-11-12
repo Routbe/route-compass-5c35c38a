@@ -295,17 +295,14 @@ export async function readPublicProfile(rawHandle: string) {
   }
   const profile = rows[0];
   if (!profile) return null;
-  // Privacyschild: bevestigt enkel "echte mens". De wettelijke naam en het land
+  // Privacyschild: bevestigt enkel "echte mens". Wettelijke naam, handelsnaam en land
   // verlaten de server dan nooit — ook niet via de JSON van de pagina.
   {
     const { parseDisplayPrefs } = await import("./profile-display");
     const prefs = parseDisplayPrefs(profile["display_prefs"]);
     if (!prefs.publicProfile) return null;
-    const approved = profile["is_business"] === true || profile["is_influencer"] === true;
-    if (!approved && ((prefs.badgeType !== "verified" && prefs.badgeType !== "domain") || !prefs.badgeVisible)) {
-      profile["verified_legal_name"] = null;
-      profile["country_code"] = null;
-    }
+    const { applyPrivacyShield } = await import("./privacy-shield-rules");
+    applyPrivacyShield(profile, prefs);
   }
   // Gecachte sociale volgeraantallen: één goedkope join-vrije query, geen
   // externe HTTP-calls tijdens het laden van de publieke pagina. Een storing

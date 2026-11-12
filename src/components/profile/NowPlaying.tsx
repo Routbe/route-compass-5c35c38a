@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLiveFresh } from "@/hooks/useLiveFresh";
 import { proxied } from "@/lib/image-proxy-rules";
 
 type NowPlayingData = {
@@ -18,7 +19,7 @@ type Theme = { card: string; border: string; text: string; muted: string };
 
 /** Shared poll so the capsule and the avatar status icon stay in sync. */
 export function useNowPlaying(handle: string | null | undefined) {
-  return useQuery({
+  const q = useQuery({
     queryKey: ["now-playing", handle],
     enabled: Boolean(handle),
     queryFn: async (): Promise<NowPlayingData & { fetchedAt: number }> => {
@@ -31,6 +32,9 @@ export function useNowPlaying(handle: string | null | undefined) {
     refetchInterval: 20_000,
     staleTime: 10_000,
   });
+  // A cached "playing" answer older than the live window (e.g. after failed polls) is never shown.
+  const fresh = useLiveFresh("spotify", q.dataUpdatedAt);
+  return fresh ? q : { ...q, data: undefined };
 }
 
 const BARS = 36;

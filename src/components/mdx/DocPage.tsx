@@ -12,9 +12,9 @@ const pages = new Map(Object.entries(modules).map(([file, load]) => {
   return [`${path}:${locale}`, lazy(load)];
 }));
 export function DocPage({ path }: { path: string }) {
-  const { locale } = useI18n();
+  const { locale, t } = useI18n();
   const doc = getDoc(path, locale); const Content = pages.get(`${path}:${locale}`) ?? pages.get(`${path}:nl`);
   if (!doc || !Content) return <p>Artikel niet beschikbaar.</p>;
   const Layout = ["about", "info", "dev", "safety"].includes(doc.category) ? DocsLayout : SEOLayout;
-  return <Layout doc={doc}><MDXProvider components={mdxComponents}><Suspense fallback={<p className="text-muted-foreground">Artikel laden…</p>}><Content /></Suspense></MDXProvider></Layout>;
+  return <Layout doc={doc}><MDXProvider components={mdxComponents}><Suspense fallback={<p className="text-muted-foreground">{t("docs.loading")}</p>}><Content /></Suspense></MDXProvider></Layout>;
 }

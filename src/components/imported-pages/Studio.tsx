@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { BrandLoader } from "@/components/BrandLoader";
 import { Button } from "@/components/ui/button";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "@/lib/router-compat";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -14,6 +14,7 @@ import { useUrlStyle } from "@/hooks/useUrlStyle";
 import { styledProfilePath, urlStyleForAtPreference, urlStyleHasAt } from "@/lib/profile-url";
 import { getVerificationState } from "@/lib/verification.functions";
 import { getWorkspaceContext } from "@/lib/workspaces.functions";
+import { getAccountStudioVariant, saveAccountStudioVariant } from "@/lib/ui-preferences.functions";
 import { verifiedTabUnlocked } from "@/lib/studio-access";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { IdentityVerification } from "@/components/settings/IdentityVerification";
@@ -52,19 +53,40 @@ export default function Studio({ initialGrid = false }: { initialGrid?: boolean 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("page") === "booking") setPageMode("booking");
   }, []);
-  // Onthoud per gebruiker welk profiel (privé of geverifieerd) laatst open was; alleen een UI-voorkeur in deze browser.
+  // Onthoud per gebruiker welk profiel (privé of geverifieerd) laatst open was: meteen uit deze
+  // browser, daarna bevestigd door de accountvoorkeur zodat elk toestel hetzelfde profiel opent.
   const variantKey = user ? `rout:studio-variant:${user.id}` : null;
+  const variantChosen = useRef(false);
+  const fetchVariant = useServerFn(getAccountStudioVariant);
+  const storeVariant = useServerFn(saveAccountStudioVariant);
   useEffect(() => {
+    variantChosen.current = false;
     if (!variantKey) return;
     try {
       const saved = window.localStorage.getItem(variantKey);
       if (saved === "alias" || saved === "verified") setVariant(saved);
     } catch { /* storage geblokkeerd: standaard blijft privé */ }
   }, [variantKey]);
+  const accountVariant = useQuery({
+    queryKey: ["studio-variant", user?.id],
+    queryFn: () => fetchVariant(),
+    enabled: Boolean(user),
+    retry: false,
+    staleTime: Infinity,
+  });
   useEffect(() => {
-    if (!variantKey || (variant !== "alias" && variant !== "verified")) return;
-    try { window.localStorage.setItem(variantKey, variant); } catch { /* negeren */ }
-  }, [variantKey, variant]);
+    const saved = accountVariant.data?.variant;
+    if (!saved || !variantKey || variantChosen.current) return;
+    setVariant(saved);
+    try { window.localStorage.setItem(variantKey, saved); } catch { /* negeren */ }
+  }, [accountVariant.data, variantKey]);
+  const chooseVariant = useCallback((next: ProfileVariant) => {
+    variantChosen.current = true;
+    setVariant(next);
+    if (!variantKey || (next !== "alias" && next !== "verified")) return;
+    try { window.localStorage.setItem(variantKey, next); } catch { /* negeren */ }
+    void storeVariant({ data: { variant: next } }).catch(() => { /* lokale keuze blijft gelden */ });
+  }, [variantKey, storeVariant]);
   const [pages, setPages] = useState({ tipEnabled: false, qaEnabled: false, handle: "" });
   const updatePages = useCallback((next: { tipEnabled: boolean; qaEnabled: boolean; handle: string }) => setPages(next), []);
   const fetchState = useServerFn(getVerificationState);
@@ -123,7 +145,7 @@ export default function Studio({ initialGrid = false }: { initialGrid?: boolean 
           <div data-tour="studio-pages" role="tablist" aria-label={t("studio.mode.pages")} className="spatial-profile-tabs !mt-0 grid grid-cols-2 gap-1 rounded-lg p-1">
             {tabs.map(({ id, label, hint, Icon, locked }) => {
               const selected = variant === id;
-              const select = () => { setVariant(id); setPageMode("profile"); };
+              const select = () => { chooseVariant(id); setPageMode("profile"); };
               const trigger = <Button variant="ghost" type="button" role="tab" aria-selected={selected} aria-pressed={selected} onClick={select} className={`min-h-12 h-auto min-w-0 flex-1 md:min-h-14 justify-start gap-2 whitespace-normal rounded-lg px-3 py-2 text-left shadow-none ${selected ? "text-foreground" : "bg-transparent text-muted-foreground hover:text-foreground"}`}>
                 <Icon className="size-4 shrink-0" />
                 <span className="min-w-0 flex-1"><span className="block text-sm font-medium">{label}</span><span className="hidden break-all font-mono text-xs opacity-70 md:block">{selected ? tabUrl(id) ?? hint : hint}</span></span>

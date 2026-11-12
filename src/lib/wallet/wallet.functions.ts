@@ -369,7 +369,7 @@ export const unlockMyCard = createServerFn({ method: "POST" })
     const proof = await ensureStepUpProof(context.userId, "card_reveal");
     await consumeStepUp();
     const { openCardUnlock } = await import("./card-unlock.server");
-    // The window is tied to this card number and ends 5 minutes after the verification itself.
+    // The window is tied to this card number and ends 2 minutes after the verification itself.
     return { ok: true as const, unlockedUntil: await openCardUnlock(context.userId, mine.card.serial, proof.verifiedAtSec), serverNow: Date.now() };
   });
 

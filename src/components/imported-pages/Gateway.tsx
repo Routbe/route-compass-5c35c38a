@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -130,6 +130,94 @@ const GATEWAY_JSON_LD = JSON.stringify([
     ].map((text, i) => ({ "@type": "HowToStep", position: i + 1, text })),
   },
 ]).replace(/</g, "\\u003c");
+
+/**
+ * Mobile: the nine product chapters become one swipe deck with topic tabs, so the
+ * page no longer stacks ~10,000px of chapters. Desktop keeps the vertical story
+ * (tabs/arrows are hidden by CSS) and gets a soft cursor spotlight per chapter.
+ */
+function ChapterDeck({ chapters, label, prevLabel, nextLabel, children }: { chapters: { key: string; topic: string; label: string }[]; label: string; prevLabel: string; nextLabel: string; children: ReactNode }) {
+  const railRef = useRef<HTMLDivElement>(null);
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(0);
+  const [height, setHeight] = useState<number | null>(null);
+  const reduced = useReducedMotion();
+
+  useEffect(() => {
+    const rail = railRef.current;
+    if (!rail) return;
+    let frame = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        if (getComputedStyle(rail).overflowX !== "auto") return;
+        const w = rail.clientWidth;
+        if (w) setActive(Math.max(0, Math.min(chapters.length - 1, Math.round(rail.scrollLeft / w))));
+      });
+    };
+    rail.addEventListener("scroll", onScroll, { passive: true });
+    return () => { rail.removeEventListener("scroll", onScroll); cancelAnimationFrame(frame); };
+  }, [chapters.length]);
+
+  // The rail is as tall as the visible chapter, not the tallest one.
+  useEffect(() => {
+    const rail = railRef.current;
+    const panel = rail?.children[active] as HTMLElement | undefined;
+    if (!rail || !panel || typeof ResizeObserver === "undefined") return;
+    const measure = () => setHeight(getComputedStyle(rail).overflowX === "auto" ? panel.offsetHeight : null);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(panel);
+    ro.observe(rail);
+    return () => ro.disconnect();
+  }, [active]);
+
+  // Keep the active tab visible inside the tab strip without moving the page.
+  useEffect(() => {
+    const strip = tabsRef.current;
+    const tab = strip?.children[active] as HTMLElement | undefined;
+    if (!strip || !tab) return;
+    strip.scrollTo({ left: tab.offsetLeft - (strip.clientWidth - tab.offsetWidth) / 2, behavior: reduced ? "auto" : "smooth" });
+  }, [active, reduced]);
+
+  const go = (i: number) => {
+    const rail = railRef.current;
+    if (!rail) return;
+    const idx = (i + chapters.length) % chapters.length;
+    rail.scrollTo({ left: idx * rail.clientWidth, behavior: reduced ? "auto" : "smooth" });
+    setActive(idx);
+  };
+
+  const spotlight = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== "mouse") return;
+    const section = (e.target as HTMLElement).closest<HTMLElement>(".story-chapter");
+    if (!section) return;
+    const r = section.getBoundingClientRect();
+    section.style.setProperty("--spot-x", `${e.clientX - r.left}px`);
+    section.style.setProperty("--spot-y", `${e.clientY - r.top}px`);
+  };
+
+  const current = chapters[active];
+  return (
+    <div className="chapter-deck" data-topic={current?.topic}>
+      <div ref={tabsRef} className="chapter-deck-tabs" aria-label={label}>
+        {chapters.map((c, i) => (
+          <button key={c.key} type="button" data-topic={c.topic} aria-controls={`chapter-${c.key}`} aria-current={i === active ? "true" : undefined} onClick={() => go(i)}>
+            {c.label}
+          </button>
+        ))}
+      </div>
+      <div ref={railRef} className="chapter-deck-rail" style={height ? { height } : undefined} onPointerMove={spotlight}>
+        {children}
+      </div>
+      <div className="chapter-deck-nav">
+        <button type="button" onClick={() => go(active - 1)} aria-label={prevLabel}><ArrowRight className="h-4 w-4 rotate-180" /></button>
+        <span aria-live="polite">{String(active + 1).padStart(2, "0")} / {String(chapters.length).padStart(2, "0")} · {current?.label}</span>
+        <button type="button" onClick={() => go(active + 1)} aria-label={nextLabel}><ArrowRight className="h-4 w-4" /></button>
+      </div>
+    </div>
+  );
+}
 
 function Reveal({ children, className }: { children: ReactNode; className?: string }) {
   const { ref, visible } = useReveal<HTMLDivElement>();
@@ -280,6 +368,7 @@ export default function Gateway() {
         <div className="story-inner mt-10"><Button asChild variant="outline" className="gap-3"><Link to="/discover">{discover.ui.allTopics}<ArrowUpRight className="h-4 w-4" /></Link></Button></div>
       </section>
 
+      <ChapterDeck chapters={CHAPTERS.map(({ key }) => ({ key, topic: CHAPTER_TOPIC[key], label: t(`story.${key}.short`) }))} label={discover.ui.allTopics} prevLabel={t("gateway.deck.prev")} nextLabel={t("gateway.deck.next")}>
       {CHAPTERS.map(({ key, to, Visual, points }, i) => <section key={key} id={`chapter-${key}`} data-topic={CHAPTER_TOPIC[key]} className={`story-section story-chapter story-chapter-${key}`}>
         <LightBars />
         <Reveal className="story-inner">
@@ -290,6 +379,7 @@ export default function Gateway() {
         </Reveal>
         {key === "qr" && <Reveal className="story-everyday"><img src={everydayImage} loading="lazy" width={1920} height={1024} alt={t("story.everyday.alt")} /><div className="story-everyday-caption"><p className="story-small-label">{t("story.everyday.kicker")}</p><h3 className="mt-4 font-display text-3xl sm:text-4xl">{t("story.everyday.title")}</h3></div></Reveal>}
       </section>)}
+      </ChapterDeck>
 
       <section className="story-section story-connections"><Reveal className="story-inner"><p className="story-small-label">ROUT / CONNECTIONS</p><h2 className="story-heading mt-5">{t("story.connections.title")}</h2><p className="story-prose mt-6">{t("story.connections.text")}</p><IntegrationMesh /><Button asChild variant="outline" className="mt-8"><Link to="/about/ecosystem">{t("story.connections.cta")}<ArrowUpRight /></Link></Button></Reveal></section>
 

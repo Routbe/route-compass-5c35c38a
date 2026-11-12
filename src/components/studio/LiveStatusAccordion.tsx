@@ -53,8 +53,8 @@ export function LiveStatusAccordion({ prefs, setPref, composer }: { prefs: Profi
           </PresenceBlock>
           <PresenceBlock title={t("studio.live.pulse")} help={t("studio.live.pulseHelp")}>
             <div className="flex items-center justify-between gap-4">
-              <p className="text-sm font-medium">{t("studio.live.pulseRing")}</p>
-              <Switch aria-label={t("studio.live.pulseRing")} checked={prefs.pulseRing} onCheckedChange={(value) => setPref("pulseRing", value)} />
+              <p className="min-w-0 flex-1 break-words text-sm font-medium">{t("studio.live.pulseRing")}</p>
+              <div className="shrink-0"><Switch aria-label={t("studio.live.pulseRing")} checked={prefs.pulseRing} onCheckedChange={(value) => setPref("pulseRing", value)} /></div>
             </div>
             {composer && <><PresenceComposer {...composer} variant="default" /><ActivePulses handle={composer.handle} /></>}
           </PresenceBlock>
@@ -84,8 +84,8 @@ function LiveIntegrationsPanel({ prefs, setPref }: { prefs: ProfileDisplayPrefs;
       {open && <div className="mt-3 space-y-3">
         {([['steamPresence', 'studio.effects.steam', 'studio.effects.steamHelp'], ['lastfmPresence', 'studio.effects.lastfm', 'studio.effects.lastfmHelp']] as const).map(([key, title, help]) => (
           <div key={key} className="flex items-start justify-between gap-4 rounded-xl border border-border p-3">
-            <div className="min-w-0"><p className="text-sm font-medium">{t(title)}</p><p className="text-xs text-muted-foreground">{t(help)}</p></div>
-            <Switch aria-label={t(title)} checked={prefs[key]} onCheckedChange={(value) => setPref(key, value)} />
+            <div className="min-w-0 flex-1 break-words"><p className="text-sm font-medium">{t(title)}</p><p className="text-xs text-muted-foreground">{t(help)}</p></div>
+            <div className="shrink-0"><Switch aria-label={t(title)} checked={prefs[key]} onCheckedChange={(value) => setPref(key, value)} /></div>
           </div>
         ))}
         <LiveIntegrations />

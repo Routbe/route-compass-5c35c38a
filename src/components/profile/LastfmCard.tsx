@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useLiveFresh } from "@/hooks/useLiveFresh";
 import { useTranslation } from "react-i18next";
 import { proxied } from "@/lib/image-proxy-rules";
 import { LASTFM_IDLE, type LastfmStatus } from "@/lib/integrations/lastfm";
@@ -17,7 +18,8 @@ export function LastfmCard({ handle, theme }: { handle: string; theme: Theme }) 
     refetchInterval: 30_000,
     staleTime: 25_000,
   });
-  const d = q.data;
+  const fresh = useLiveFresh("lastfm", q.dataUpdatedAt);
+  const d = fresh ? q.data : undefined;
   if (!d?.playing) return null;
   const art = proxied(d.art);
   const body = (

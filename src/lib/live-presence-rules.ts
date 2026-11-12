@@ -25,6 +25,23 @@ export function isLiveActive(provider: string, lastActiveAt: string | null | und
   return Number.isFinite(t) && now - t <= win;
 }
 
+/**
+ * Live widgets fed by polling (music, games) disappear once their last successful update
+ * is older than this, even when a failed refresh left the old answer cached.
+ */
+export const LIVE_DATA_MAX_AGE_MS: Record<string, number> = {
+  spotify: 10 * MIN,
+  lastfm: 10 * MIN,
+  steam: 15 * MIN,
+};
+
+export function isLiveDataFresh(provider: string, updatedAt: number | null | undefined, now = Date.now()): boolean {
+  const max = LIVE_DATA_MAX_AGE_MS[provider];
+  if (max === undefined) return true;
+  if (typeof updatedAt !== "number" || !Number.isFinite(updatedAt) || updatedAt <= 0) return false;
+  return now - updatedAt <= max;
+}
+
 /** Spotify shows only while something is actually playing. */
 export function isSpotifyVisible(np: { playing?: boolean } | null | undefined): boolean {
   return np?.playing === true;

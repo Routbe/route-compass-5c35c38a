@@ -13,7 +13,7 @@ export type CardState = "active" | "frozen" | "blocked" | "unavailable";
 export type CardAction = "freeze" | "unfreeze" | "block" | "replace" | "reveal" | "claim";
 
 /** How long the private side stays visible after one verification. */
-export const CARD_UNLOCK_TTL_S = 300;
+export const CARD_UNLOCK_TTL_S = 120;
 export const CARD_UNLOCK_COOKIE = "rout_card_unlock";
 /** Hard cap on replacements (also enforced by the database). */
 export const MAX_CARD_GENERATION = 999;
