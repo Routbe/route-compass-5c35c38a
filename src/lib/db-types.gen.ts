@@ -510,6 +510,27 @@ export interface PublicBookingEventTypesRow {
   "updated_at": string | Date;
   "custom_fields": JsonValue;
   "resource_capacity": number;
+  "limit_per_day": number | null;
+  "limit_per_week": number | null;
+  "limit_per_month": number | null;
+  "limit_per_guest": number | null;
+  "horizon_business_days": number | null;
+  "adjacent_only": boolean;
+  "rules_timezone": string | null;
+}
+
+export interface PublicBookingHoldsRow {
+  "hold_id": string;
+  "host_user_id": string;
+  "event_type_id": string;
+  "start_utc": string | Date;
+  "block_start_utc": string | Date;
+  "block_end_utc": string | Date;
+  "shared_slot": boolean;
+  "secret_digest": Uint8Array;
+  "client_digest": Uint8Array;
+  "expires_at": string | Date;
+  "created_at": string | Date;
 }
 
 export interface PublicBookingRequestsRow {
@@ -2575,6 +2596,7 @@ export interface DbTables {
   "public.badges": PublicBadgesRow;
   "public.booking_event_type_hosts": PublicBookingEventTypeHostsRow;
   "public.booking_event_types": PublicBookingEventTypesRow;
+  "public.booking_holds": PublicBookingHoldsRow;
   "public.booking_requests": PublicBookingRequestsRow;
   "public.bookings": PublicBookingsRow;
   "public.bunq_oauth_tokens": PublicBunqOauthTokensRow;
