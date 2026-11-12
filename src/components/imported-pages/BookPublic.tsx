@@ -112,13 +112,13 @@ export default function BookPublic({ eventTypeId, selectedStart, initial }: { ev
   const countdown = hold ? holdCountdown(hold.expiresAt, clock) : null;
 
   useEffect(() => {
-    if (selectionApplied || !slotsQ.data) return;
+    if (selectionApplied || !slotsQ.data || !prefs) return;
     const offered = offeredSelection(selectedStart, slotsQ.data.slots);
     if (offered) { setDay(localDayKey(offered, tz)); void pickSlot(offered); }
     setSelectionApplied(true);
     // pickSlot only reads stable setters and the current hold.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedStart, slotsQ.data, tz, selectionApplied]);
+  }, [selectedStart, slotsQ.data, tz, prefs, selectionApplied]);
 
   const releaseHold = (h = hold) => {
     if (!h) return;
