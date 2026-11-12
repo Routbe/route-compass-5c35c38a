@@ -22,9 +22,7 @@ describe("gap-free starts (adjacent only)", () => {
   });
 
   it("a taken 10:00–10:30 adds 09:30 and 10:30 as gap-free starts", () => {
-    const bits = free(32, 40) + "";
     const withBooking = free(32, 48).slice(0, 40) + "00" + free(32, 48).slice(42);
-    expect(bits.length).toBe(96);
     expect(hhmm(bookableStarts(day(withBooking), { ...rules, adjacentOnly: true }, now))).toEqual(["08:00", "09:30", "10:30", "11:30"]);
   });
 
@@ -39,9 +37,9 @@ describe("gap-free starts (adjacent only)", () => {
 });
 
 describe("horizon from the database", () => {
-  it("the exclusive horizon end replaces max days ahead", () => {
+  it("the exclusive horizon end replaces max days ahead (it limits the start, like the database)", () => {
     const r = { ...rules, horizonEndUtc: new Date("2026-02-02T09:00:00Z") };
-    expect(hhmm(bookableStarts(day(free(32, 48)), r, now))).toEqual(["08:00", "08:15", "08:30"]);
+    expect(hhmm(bookableStarts(day(free(32, 48)), r, now))).toEqual(["08:00", "08:15", "08:30", "08:45"]);
   });
 
   it("business days need enough cached calendar days, capped at 365", () => {
