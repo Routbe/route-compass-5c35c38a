@@ -4,6 +4,7 @@ import { getNextBookingSlots } from "@/lib/booking-engine/booking.functions";
 import { validBookingStart } from "@/lib/booking-engine/selection";
 import BookPublic from "@/components/imported-pages/BookPublic";
 import { shareCardMeta } from "@/lib/og-action-card";
+import { loadBookingInitial } from "@/lib/booking-engine/booking-initial";
 
 export const Route = createFileRoute("/$username_/booking")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -14,7 +15,7 @@ export const Route = createFileRoute("/$username_/booking")({
   loader: async ({ params, deps }) => {
     const event = await getNextBookingSlots({ data: { handle: params.username.replace(/^@/, ""), eventTypeId: deps.event ?? null } });
     if (!event) throw notFound();
-    return { eventTypeId: event.eventTypeId, title: event.title };
+    return { eventTypeId: event.eventTypeId, title: event.title, initial: await loadBookingInitial(event.eventTypeId) };
   },
   head: ({ loaderData, params }) => ({ meta: [
     { title: `${loaderData?.title ?? "Afspraak boeken"} | ROUT` },
@@ -28,7 +29,7 @@ export const Route = createFileRoute("/$username_/booking")({
 });
 
 function BookingRoute() {
-  const { eventTypeId } = Route.useLoaderData();
+  const { eventTypeId, initial } = Route.useLoaderData();
   const { start } = Route.useSearch();
-  return <BookPublic key={`${eventTypeId}:${start ?? ""}`} eventTypeId={eventTypeId} selectedStart={start} />;
+  return <BookPublic key={`${eventTypeId}:${start ?? ""}`} eventTypeId={eventTypeId} selectedStart={start} initial={initial} />;
 }
